@@ -220,6 +220,46 @@ func (a *DataManagementsApi) ClearAllDataHandler(c *core.WebContext) (any, *errs
 	return true, nil
 }
 
+// DeleteAccountHandler deletes current user account
+func (a *DataManagementsApi) DeleteAccountHandler(c *core.WebContext) (any, *errs.Error) {
+	var clearDataReq models.ClearDataRequest
+	err := c.ShouldBindJSON(&clearDataReq)
+
+	if err != nil {
+		log.Warnf(c, "[data_managements.DeleteAccountHandler] parse request failed, because %s", err.Error())
+		return nil, errs.NewIncompleteOrIncorrectSubmissionError(err)
+	}
+
+	uid := c.GetCurrentUid()
+	user, err := a.users.GetUserById(c, uid)
+
+	if err != nil {
+		if !errs.IsCustomError(err) {
+			log.Warnf(c, "[data_managements.DeleteAccountHandler] failed to get user for user \"uid:%d\", because %s", uid, err.Error())
+		}
+
+		return nil, errs.ErrUserNotFound
+	}
+
+	if !a.users.IsPasswordEqualsUserPassword(clearDataReq.Password, user) {
+		return nil, errs.ErrUserPasswordWrong
+	}
+
+	if user.FeatureRestriction.Contains(core.USER_FEATURE_RESTRICTION_TYPE_CLEAR_ALL_DATA) {
+		return nil, errs.ErrNotPermittedToPerformThisAction
+	}
+
+	err = a.users.DeleteUser(c, user.Username)
+
+	if err != nil {
+		log.Errorf(c, "[data_managements.DeleteAccountHandler] failed to delete user \"uid:%d\", because %s", uid, err.Error())
+		return nil, errs.Or(err, errs.ErrOperationFailed)
+	}
+
+	log.Infof(c, "[data_managements.DeleteAccountHandler] user \"uid:%d\" has deleted account", uid)
+	return true, nil
+}
+
 // ClearAllTransactionsHandler deletes all transactions
 func (a *DataManagementsApi) ClearAllTransactionsHandler(c *core.WebContext) (any, *errs.Error) {
 	var clearDataReq models.ClearDataRequest

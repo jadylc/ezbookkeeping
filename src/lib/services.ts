@@ -477,6 +477,11 @@ export default {
             timeout: DEFAULT_CLEAR_ALL_TRANSACTIONS_API_TIMEOUT
         } as ApiRequestConfig);
     },
+    deleteCurrentUser: (req: ClearDataRequest): ApiResponsePromise<boolean> => {
+        return axios.post<ApiResponse<boolean>>('v1/data/delete_account.json', req, {
+            timeout: DEFAULT_CLEAR_ALL_TRANSACTIONS_API_TIMEOUT
+        } as ApiRequestConfig);
+    },
     clearAllTransactions: (req: ClearDataRequest): ApiResponsePromise<boolean> => {
         return axios.post<ApiResponse<boolean>>('v1/data/clear/transactions.json', req, {
             timeout: DEFAULT_CLEAR_ALL_TRANSACTIONS_API_TIMEOUT

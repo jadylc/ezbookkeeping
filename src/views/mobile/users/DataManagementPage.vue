@@ -1,4 +1,4 @@
-<template>
+﻿<template>
     <f7-page @page:afterin="onPageAfterIn">
         <f7-navbar :class="{ 'disabled': loading }" :back-link="tt('Back')" :title="tt('Data Management')"></f7-navbar>
 
@@ -33,6 +33,7 @@
         <f7-list strong inset dividers class="margin-vertical" :class="{ 'disabled': loading }">
             <f7-list-button color="red" @click="clearAllTransactions(null)">{{ tt('Clear All Transactions') }}</f7-list-button>
             <f7-list-button color="red" @click="clearAllData(null)">{{ tt('Clear All Data') }}</f7-list-button>
+            <f7-list-button color="red" @click="deleteAccount(null)">{{ tt('Delete Account') }}</f7-list-button>
         </f7-list>
 
         <f7-sheet swipe-handler=".swipe-handler" style="height:auto"
@@ -86,6 +87,16 @@
                               v-model="currentPasswordForClearData"
                               @password:confirm="clearAllData">
         </password-input-sheet>
+
+        <password-input-sheet :title="tt('Delete Account')"
+                              :hint="tt('You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.')"
+                              :confirm-disabled="clearingData"
+                              :cancel-disabled="clearingData"
+                              color="red"
+                              v-model:show="showInputPasswordSheetForDeleteAccount"
+                              v-model="currentPasswordForClearData"
+                              @password:confirm="deleteAccount">
+        </password-input-sheet>
     </f7-page>
 </template>
 
@@ -107,7 +118,7 @@ const props = defineProps<{
 }>();
 
 const { tt } = useI18n();
-const { showToast, routeBackOnError } = useI18nUIComponents();
+const { showToast, showConfirm, routeBackOnError } = useI18nUIComponents();
 const { dataStatistics, displayDataStatistics, getExportFileName } = useDataManagementPageBase();
 
 const rootStore = useRootStore();
@@ -123,6 +134,7 @@ const clearingData = ref<boolean>(false);
 const showExportDataSheet = ref<boolean>(false);
 const showInputPasswordSheetForClearAllTransactions = ref<boolean>(false);
 const showInputPasswordSheetForClearAllData = ref<boolean>(false);
+const showInputPasswordSheetForDeleteAccount = ref<boolean>(false);
 
 const exportFileName = computed<string>(() => getExportFileName(exportFileType.value));
 
@@ -223,6 +235,37 @@ function clearAllData(password: string | null): void {
     });
 }
 
+function deleteAccount(password: string | null): void {
+    if (!password) {
+        currentPasswordForClearData.value = '';
+        showInputPasswordSheetForDeleteAccount.value = true;
+        return;
+    }
+
+    showConfirm(tt('Are you sure you want to delete your account?'), () => {
+        clearingData.value = true;
+        showLoading(() => clearingData.value);
+
+        rootStore.deleteCurrentUser({
+            password: password
+        }).then(() => {
+            clearingData.value = false;
+            currentPasswordForClearData.value = '';
+            hideLoading();
+
+            showInputPasswordSheetForDeleteAccount.value = false;
+            props.f7router.navigate('/login');
+        }).catch(error => {
+            clearingData.value = false;
+            hideLoading();
+
+            if (!error.processed) {
+                showToast(error.message || error);
+            }
+        });
+    });
+}
+
 function onPageAfterIn(): void {
     routeBackOnError(props.f7router, loadingError);
 }
@@ -235,3 +278,5 @@ reloadUserDataStatistics();
     padding-inline-start: 0;
 }
 </style>
+
+

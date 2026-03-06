@@ -102,12 +102,6 @@
                         <span class="nav-item-title">{{ tt('Use on Mobile Device') }}</span>
                     </a>
                 </li>
-                <li class="nav-link">
-                    <router-link to="/about">
-                        <v-icon class="nav-item-icon" :icon="mdiInformationOutline"/>
-                        <span class="nav-item-title">{{ tt('About') }}</span>
-                    </router-link>
-                </li>
             </perfect-scrollbar>
         </div>
 
@@ -238,7 +232,6 @@ import {
     mdiSwapHorizontal,
     mdiCogOutline,
     mdiCellphone,
-    mdiInformationOutline,
     mdiThemeLightDark,
     mdiWeatherSunny,
     mdiWeatherNight,

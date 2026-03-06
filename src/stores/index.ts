@@ -642,6 +642,37 @@ export const useRootStore = defineStore('root', () => {
         });
     }
 
+    function deleteCurrentUser({ password }: { password: string }): Promise<boolean> {
+        return new Promise((resolve, reject) => {
+            services.deleteCurrentUser({
+                password: password
+            }).then(response => {
+                const data = response.data;
+
+                if (!data || !data.success || !data.result) {
+                    reject({ message: 'Unable to delete account' });
+                    return;
+                }
+
+                clearCurrentTokenAndUserInfo(true);
+                clearWebAuthnConfig();
+                resetAllStates(true);
+
+                resolve(data.result);
+            }).catch(error => {
+                logger.error('failed to delete account', error);
+
+                if (error && error.processed) {
+                    reject(error);
+                } else if (error.response && error.response.data && error.response.data.errorMessage) {
+                    reject({ error: error.response.data });
+                } else {
+                    reject({ message: 'Unable to delete account' });
+                }
+            });
+        });
+    }
+
     return {
         // states
         currentNotification,
@@ -664,6 +695,7 @@ export const useRootStore = defineStore('root', () => {
         resendVerifyEmailByLoginedUser,
         clearAllUserTransactionsOfAccount,
         clearAllUserTransactions,
-        clearAllUserData
+        clearAllUserData,
+        deleteCurrentUser
     };
 });

@@ -25,6 +25,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Read package version
+        id: package_version
+        run: |
+          echo "version=$(grep '"version":' package.json | head -n 1 | sed -E 's/.*"version": "([^"]+)".*/\1/')" >> "$GITHUB_OUTPUT"
+
       - name: Docker meta
         id: meta
         uses: docker/metadata-action@v5
@@ -32,6 +37,8 @@ jobs:
           images: |
             ${{ vars.DOCKER_IMAGE_NAME }}
           tags: |
+            type=raw,value=${{ steps.package_version.outputs.version }}
+            type=raw,value=latest
             type=raw,value=SNAPSHOT-{{date 'YYYYMMDD'}}-${{ github.run_id }}
             type=raw,value=SNAPSHOT-{{date 'YYYYMMDD'}}
             type=raw,value=latest-snapshot

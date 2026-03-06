@@ -362,6 +362,7 @@ func startWebServer(c *core.CliContext) error {
 			// Data
 			apiV1Route.GET("/data/statistics.json", bindApi(api.DataManagements.DataStatisticsHandler))
 			apiV1Route.POST("/data/clear/all.json", bindApi(api.DataManagements.ClearAllDataHandler))
+			apiV1Route.POST("/data/delete_account.json", bindApi(api.DataManagements.DeleteAccountHandler))
 			apiV1Route.POST("/data/clear/transactions.json", bindApi(api.DataManagements.ClearAllTransactionsHandler))
 			apiV1Route.POST("/data/clear/transactions/by_account.json", bindApi(api.DataManagements.ClearAllTransactionsByAccountHandler))
 

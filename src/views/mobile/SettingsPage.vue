@@ -111,7 +111,6 @@
             <f7-list-item :title="tt('Browser Cache Management')" link="/settings/browser_caches"></f7-list-item>
             <f7-list-item link="#" no-chevron :title="tt('Switch to Desktop Version')" @click="switchToDesktopVersion"></f7-list-item>
 
-            <f7-list-item :title="tt('About')" link="/about" :after="version"></f7-list-item>
         </f7-list>
     </f7-page>
 </template>
@@ -131,7 +130,7 @@ import { useExchangeRatesStore } from '@/stores/exchangeRates.ts';
 
 import { findNameByValue } from '@/lib/common.ts';
 import { parseDateTimeFromUnixTime } from '@/lib/datetime.ts';
-import { getClientDisplayVersion, getDesktopVersionPath } from '@/lib/version.ts';
+import { getDesktopVersionPath } from '@/lib/version.ts';
 import { isUserScheduledTransactionEnabled } from '@/lib/server_settings.ts';
 import { setExpenseAndIncomeAmountColor } from '@/lib/ui/common.ts';
 
@@ -147,8 +146,6 @@ const rootStore = useRootStore();
 const settingsStore = useSettingsStore();
 const userStore = useUserStore();
 const exchangeRatesStore = useExchangeRatesStore();
-
-const version = `${getClientDisplayVersion()}`;
 
 const logouting = ref<boolean>(false);
 const showThemePopup = ref<boolean>(false);

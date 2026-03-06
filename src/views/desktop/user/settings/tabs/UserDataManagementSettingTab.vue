@@ -156,6 +156,9 @@
                                 <v-list-item @click="clearAllData">
                                     <v-list-item-title>{{ tt('Clear All Data') }}</v-list-item-title>
                                 </v-list-item>
+                                <v-list-item @click="deleteAccount">
+                                    <v-list-item-title>{{ tt('Delete Account') }}</v-list-item-title>
+                                </v-list-item>
                             </v-list>
                         </v-menu>
                     </v-btn>
@@ -173,6 +176,7 @@ import ConfirmDialog from '@/components/desktop/ConfirmDialog.vue';
 import SnackBar from '@/components/desktop/SnackBar.vue';
 
 import { ref, useTemplateRef } from 'vue';
+import { useRouter } from 'vue-router';
 
 import { useI18n } from '@/locales/helpers.ts';
 import { useDataManagementPageBase } from '@/views/base/users/DataManagementPageBase.ts';
@@ -202,6 +206,8 @@ type SnackBarType = InstanceType<typeof SnackBar>;
 
 const { tt } = useI18n();
 const { dataStatistics, displayDataStatistics, getExportFileName } = useDataManagementPageBase();
+
+const router = useRouter();
 
 const rootStore = useRootStore();
 const userStore = useUserStore();
@@ -308,6 +314,35 @@ function clearAllData(): void {
 
             snackbar.value?.showMessage('All user data has been cleared');
             reloadUserDataStatistics(false);
+        }).catch(error => {
+            clearingData.value = false;
+
+            if (!error.processed) {
+                snackbar.value?.showError(error);
+            }
+        });
+    });
+}
+
+function deleteAccount(): void {
+    if (!currentPasswordForClearData.value) {
+        snackbar.value?.showMessage('Current password cannot be blank');
+        return;
+    }
+
+    if (clearingData.value) {
+        return;
+    }
+
+    confirmDialog.value?.open(tt('Are you sure you want to delete your account?'), { color: 'error' }).then(() => {
+        clearingData.value = true;
+
+        rootStore.deleteCurrentUser({
+            password: currentPasswordForClearData.value
+        }).then(() => {
+            clearingData.value = false;
+            currentPasswordForClearData.value = '';
+            router.replace('/login');
         }).catch(error => {
             clearingData.value = false;
 
