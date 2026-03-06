@@ -67,7 +67,7 @@ describe('getChineseYearMonthAllDayInfos', () => {
         const gregorianYear = parseInt(gregorianDateItems[0] as string, 10);
         const gregorianMonth = parseInt(gregorianDateItems[1] as string, 10);
         const chineseDay = items[1] as string;
-        const solarTermName = items.length > 3 ? items[3] as string : '';
+        const solarTermName = items.length > 3 ? (items[3] as string).trim() : '';
 
         if (currentYear > 0 && currentMonth > 0 && (gregorianYear !== currentYear || gregorianMonth !== currentMonth)) {
             allMonthChineseDays[`${currentYear}-${currentMonth}`] = currentMonthChineseDays;
@@ -135,7 +135,7 @@ describe('getChineseYearMonthDayInfo', () => {
         const gregorianMonth = parseInt(gregorianDateItems[1] as string);
         const gregorianDay = parseInt(gregorianDateItems[2] as string);
         const expectedChineseMonthOrDay = items[1] as string;
-        const expectedSolarTermName = items.length > 3 ? items[3] as string : '';
+        const expectedSolarTermName = items.length > 3 ? (items[3] as string).trim() : '';
 
         test(`returns correct chinese date for ${gregorianDate}`, () => {
             const actualChineseDate: ChineseYearMonthDayInfo | undefined = getChineseYearMonthDayInfo({
