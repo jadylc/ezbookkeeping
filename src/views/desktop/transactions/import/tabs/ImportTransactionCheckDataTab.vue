@@ -2073,7 +2073,7 @@ function showBatchCreateInvalidItemDialog(type: BatchCreateDialogDataType, inval
                     }
                 } else if (type === 'account') {
                     const sourceAccountId = importTransaction.sourceAccountId;
-                    const sourceTargetItem = sourceTargetMap[importTransaction.originalSourceAccountName];
+                    const sourceTargetItem = sourceTargetMap[importTransaction.originalSourceAccountName || ''];
 
                     if (sourceTargetItem && (!sourceAccountId || sourceAccountId === '0' || !allAccountsMap.value[sourceAccountId])) {
                         importTransaction.sourceAccountId = sourceTargetItem;
@@ -2082,7 +2082,7 @@ function showBatchCreateInvalidItemDialog(type: BatchCreateDialogDataType, inval
 
                     if (importTransaction.type === TransactionType.Transfer) {
                         const destinationAccountId = importTransaction.destinationAccountId;
-                        const destinationTargetItem = sourceTargetMap[importTransaction.originalDestinationAccountName];
+                        const destinationTargetItem = sourceTargetMap[importTransaction.originalDestinationAccountName || ''];
 
                         if (destinationTargetItem && (!destinationAccountId || destinationAccountId === '0' || !allAccountsMap.value[destinationAccountId])) {
                             importTransaction.destinationAccountId = destinationTargetItem;
