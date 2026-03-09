@@ -2312,9 +2312,9 @@
     "Clear User Data": "ユーザーデータをクリア",
     "Clear All Transactions": "Clear All Transactions",
     "Clear All Data": "Clear All Data",
-  "Delete Account": "Delete Account",
-  "Are you sure you want to delete your account?": "Are you sure you want to delete your account?",
-  "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.": "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.",
+    "Delete Account": "Delete Account",
+    "Are you sure you want to delete your account?": "Are you sure you want to delete your account?",
+    "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.": "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.",
     "Export all transaction data to file.": "すべての取引データをファイルにエクスポートします。",
     "Are you sure you want to export all transaction data to file?": "取引データをファイルにエクスポートしますか？",
     "It may take a long time, please wait for a few minutes.": "時間がかかる場合がありますので数分お待ちください。",
@@ -2569,5 +2569,6 @@
     "An error occurred": "エラーが発生しました",
     "Parameter Invalid": "パラメーターが無効です",
     "Numeric Overflow": "数値オーバーフロー",
-    "Click to close": "クリックして閉じる"
+    "Click to close": "クリックして閉じる",
+    "Create Nonexistent Accounts": "Create Nonexistent Accounts"
 }

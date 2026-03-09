@@ -2312,9 +2312,9 @@
     "Clear User Data": "Benutzerdaten löschen",
     "Clear All Transactions": "Clear All Transactions",
     "Clear All Data": "Clear All Data",
-  "Delete Account": "Delete Account",
-  "Are you sure you want to delete your account?": "Are you sure you want to delete your account?",
-  "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.": "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.",
+    "Delete Account": "Delete Account",
+    "Are you sure you want to delete your account?": "Are you sure you want to delete your account?",
+    "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.": "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.",
     "Export all transaction data to file.": "Alle Transaktionsdaten in Datei exportieren.",
     "Are you sure you want to export all transaction data to file?": "Sind Sie sicher, dass Sie alle Transaktionsdaten in eine Datei exportieren möchten?",
     "It may take a long time, please wait for a few minutes.": "Es kann lange dauern, bitte warten Sie ein paar Minuten.",
@@ -2569,5 +2569,6 @@
     "An error occurred": "Ein Fehler ist aufgetreten",
     "Parameter Invalid": "Parameter ungültig",
     "Numeric Overflow": "Numerischer Überlauf",
-    "Click to close": "Zum Schließen klicken"
+    "Click to close": "Zum Schließen klicken",
+    "Create Nonexistent Accounts": "Create Nonexistent Accounts"
 }

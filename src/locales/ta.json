@@ -2312,9 +2312,9 @@
     "Clear User Data": "பயனர் தரவை அழி",
     "Clear All Transactions": "அனைத்தும் பரிவர்த்தனைகளை அழி",
     "Clear All Data": "அனைத்தும் தரவுவை அழி",
-  "Delete Account": "Delete Account",
-  "Are you sure you want to delete your account?": "Are you sure you want to delete your account?",
-  "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.": "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.",
+    "Delete Account": "Delete Account",
+    "Are you sure you want to delete your account?": "Are you sure you want to delete your account?",
+    "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.": "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.",
     "Export all transaction data to file.": "அனைத்தும் பரிவர்த்தனை தரவுவை கோப்பு‌க்கு ஏற்றுமதி செய்.",
     "Are you sure you want to export all transaction data to file?": "அனைத்தும் பரிவர்த்தனை தரவுவை கோப்பு‌க்கு ஏற்றுமதி செய்ய நீங்கள் உறுதியா?",
     "It may take a long time, please wait for a few minutes.": "இது அதிகம் நேரம் எடுக்கலாம், தயவுசெய்து சில நிமிடங்கள் காத்திருங்கள்.",
@@ -2569,5 +2569,6 @@
     "An error occurred": "பிழை ஏற்பட்டது",
     "Parameter Invalid": "தவறான அளவுரு",
     "Numeric Overflow": "எண் வழிதல்",
-    "Click to close": "மூட கிளிக் செய்யவும்"
+    "Click to close": "மூட கிளிக் செய்யவும்",
+    "Create Nonexistent Accounts": "Create Nonexistent Accounts"
 }

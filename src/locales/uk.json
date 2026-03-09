@@ -2312,9 +2312,9 @@
     "Clear User Data": "Очистити дані користувача",
     "Clear All Transactions": "Clear All Transactions",
     "Clear All Data": "Clear All Data",
-  "Delete Account": "Delete Account",
-  "Are you sure you want to delete your account?": "Are you sure you want to delete your account?",
-  "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.": "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.",
+    "Delete Account": "Delete Account",
+    "Are you sure you want to delete your account?": "Are you sure you want to delete your account?",
+    "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.": "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.",
     "Export all transaction data to file.": "Експортувати всі транзакції у файл.",
     "Are you sure you want to export all transaction data to file?": "Ви впевнені, що хочете експортувати всі транзакції?",
     "It may take a long time, please wait for a few minutes.": "Це може зайняти певний час, зачекайте кілька хвилин.",
@@ -2569,5 +2569,6 @@
     "An error occurred": "Сталася помилка",
     "Parameter Invalid": "Неправильний параметр",
     "Numeric Overflow": "Числове переповнення",
-    "Click to close": "Натисніть, щоб закрити"
+    "Click to close": "Натисніть, щоб закрити",
+    "Create Nonexistent Accounts": "Create Nonexistent Accounts"
 }

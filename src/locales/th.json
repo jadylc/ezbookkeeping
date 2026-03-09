@@ -2312,9 +2312,9 @@
     "Clear User Data": "ลบข้อมูลผู้ใช้",
     "Clear All Transactions": "ลบรายการทั้งหมด",
     "Clear All Data": "ลบข้อมูลทั้งหมด",
-  "Delete Account": "Delete Account",
-  "Are you sure you want to delete your account?": "Are you sure you want to delete your account?",
-  "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.": "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.",
+    "Delete Account": "Delete Account",
+    "Are you sure you want to delete your account?": "Are you sure you want to delete your account?",
+    "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.": "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.",
     "Export all transaction data to file.": "ส่งออกข้อมูลรายการทั้งหมดเป็นไฟล์",
     "Are you sure you want to export all transaction data to file?": "คุณแน่ใจหรือว่าต้องการส่งออกข้อมูลรายการทั้งหมดเป็นไฟล์?",
     "It may take a long time, please wait for a few minutes.": "อาจใช้เวลานาน กรุณารอสักครู่",
@@ -2569,5 +2569,6 @@
     "An error occurred": "เกิดข้อผิดพลาด",
     "Parameter Invalid": "พารามิเตอร์ไม่ถูกต้อง",
     "Numeric Overflow": "ตัวเลขล้น",
-    "Click to close": "คลิกเพื่อปิด"
+    "Click to close": "คลิกเพื่อปิด",
+    "Create Nonexistent Accounts": "Create Nonexistent Accounts"
 }

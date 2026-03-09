@@ -2312,9 +2312,9 @@
     "Clear User Data": "Clear User Data",
     "Clear All Transactions": "Clear All Transactions",
     "Clear All Data": "Clear All Data",
-  "Delete Account": "Delete Account",
-  "Are you sure you want to delete your account?": "Are you sure you want to delete your account?",
-  "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.": "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.",
+    "Delete Account": "Delete Account",
+    "Are you sure you want to delete your account?": "Are you sure you want to delete your account?",
+    "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.": "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.",
     "Export all transaction data to file.": "Export all transaction data to file.",
     "Are you sure you want to export all transaction data to file?": "Are you sure you want to export all transaction data to file?",
     "It may take a long time, please wait for a few minutes.": "It may take a long time, please wait for a few minutes.",
@@ -2569,5 +2569,6 @@
     "An error occurred": "An error occurred",
     "Parameter Invalid": "Parameter Invalid",
     "Numeric Overflow": "Numeric Overflow",
-    "Click to close": "Click to close"
+    "Click to close": "Click to close",
+    "Create Nonexistent Accounts": "Create Nonexistent Accounts"
 }

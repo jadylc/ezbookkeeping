@@ -417,6 +417,7 @@ import { useTransactionTagsStore } from '@/stores/transactionTag.ts';
 
 import { type NameValue, type NameNumeralValue, itemAndIndex, reversed, keys } from '@/core/base.ts';
 import { type NumeralSystem, AmountFilterType } from '@/core/numeral.ts';
+import { AccountCategory } from '@/core/account.ts';
 import { CategoryType } from '@/core/category.ts';
 import { TransactionType } from '@/core/transaction.ts';
 import { KnownFileType } from '@/core/file.ts';
@@ -435,6 +436,7 @@ import {
 } from '@/lib/common.ts';
 import {
     getUtcOffsetByUtcOffsetMinutes,
+    getCurrentUnixTime,
     getTimezoneOffsetMinutes,
     parseDateTimeFromUnixTime,
     parseDateTimeFromUnixTimeWithTimezoneOffset
@@ -896,6 +898,12 @@ const toolMenus = computed<ImportTransactionCheckDataMenu[]>(() => [
         title: tt('Create Nonexistent Transfer Categories'),
         disabled: isEditing.value || !allInvalidTransferCategoryNames.value || allInvalidTransferCategoryNames.value.length < 1,
         onClick: () => showBatchCreateInvalidItemDialog('transferCategory', allInvalidTransferCategoryNames.value)
+    },
+    {
+        prependIcon: mdiShapePlusOutline,
+        title: tt('Create Nonexistent Accounts'),
+        disabled: isEditing.value || !allInvalidAccountNames.value || allInvalidAccountNames.value.length < 1,
+        onClick: createAllInvalidAccounts
     },
     {
         prependIcon: mdiShapePlusOutline,
@@ -2089,6 +2097,75 @@ function showBatchCreateInvalidItemDialog(type: BatchCreateDialogDataType, inval
             snackbar.value?.showMessage('format.misc.youHaveUpdatedTransactions', {
                 count: getDisplayCount(updatedCount)
             });
+        }
+    });
+}
+
+function createAllInvalidAccounts(): void {
+    if (isEditing.value || !allInvalidAccountNames.value || allInvalidAccountNames.value.length < 1) {
+        return;
+    }
+
+    const invalidItems = allInvalidAccountNames.value.filter(item => !!item.value);
+
+    if (!invalidItems.length) {
+        return;
+    }
+
+    const savePromises = invalidItems.map(item => {
+        const account = Account.createNewAccount(AccountCategory.Default, defaultCurrency.value, getCurrentUnixTime());
+        account.name = item.value;
+
+        return accountsStore.saveAccount({
+            account,
+            subAccounts: [],
+            isEdit: false,
+            clientSessionId: ''
+        });
+    });
+
+    Promise.all(savePromises).then(createdAccounts => {
+        const accountMapByName = getAccountMapByName(createdAccounts);
+        let updatedCount = 0;
+
+        if (props.importTransactions) {
+            for (const importTransaction of props.importTransactions) {
+                if (importTransaction.valid) {
+                    continue;
+                }
+
+                let updated = false;
+                const sourceAccount = accountMapByName[importTransaction.originalSourceAccountName || ''];
+
+                if (sourceAccount && (!importTransaction.sourceAccountId || importTransaction.sourceAccountId === '0' || !allAccountsMap.value[importTransaction.sourceAccountId])) {
+                    importTransaction.sourceAccountId = sourceAccount.id;
+                    updated = true;
+                }
+
+                if (importTransaction.type === TransactionType.Transfer) {
+                    const destinationAccount = accountMapByName[importTransaction.originalDestinationAccountName || ''];
+
+                    if (destinationAccount && (!importTransaction.destinationAccountId || importTransaction.destinationAccountId === '0' || !allAccountsMap.value[importTransaction.destinationAccountId])) {
+                        importTransaction.destinationAccountId = destinationAccount.id;
+                        updated = true;
+                    }
+                }
+
+                if (updated) {
+                    updatedCount++;
+                    updateTransactionData(importTransaction);
+                }
+            }
+        }
+
+        if (updatedCount > 0) {
+            snackbar.value?.showMessage('format.misc.youHaveUpdatedTransactions', {
+                count: getDisplayCount(updatedCount)
+            });
+        }
+    }).catch(error => {
+        if (!error.processed) {
+            snackbar.value?.showError(error);
         }
     });
 }

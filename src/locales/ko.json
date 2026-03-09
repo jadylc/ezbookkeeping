@@ -2312,9 +2312,9 @@
     "Clear User Data": "사용자 데이터 지우기",
     "Clear All Transactions": "모든 거래 지우기",
     "Clear All Data": "모든 데이터 지우기",
-  "Delete Account": "Delete Account",
-  "Are you sure you want to delete your account?": "Are you sure you want to delete your account?",
-  "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.": "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.",
+    "Delete Account": "Delete Account",
+    "Are you sure you want to delete your account?": "Are you sure you want to delete your account?",
+    "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.": "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.",
     "Export all transaction data to file.": "모든 거래 데이터를 파일로 내보내기.",
     "Are you sure you want to export all transaction data to file?": "모든 거래 데이터를 파일로 내보내시겠습니까?",
     "It may take a long time, please wait for a few minutes.": "오래 걸릴 수 있으니 몇 분 정도 기다려 주십시오.",
@@ -2569,5 +2569,6 @@
     "An error occurred": "오류가 발생했습니다.",
     "Parameter Invalid": "잘못된 매개변수",
     "Numeric Overflow": "숫자 오버플로우",
-    "Click to close": "닫으려면 클릭하세요"
+    "Click to close": "닫으려면 클릭하세요",
+    "Create Nonexistent Accounts": "Create Nonexistent Accounts"
 }

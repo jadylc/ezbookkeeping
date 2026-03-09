@@ -2312,9 +2312,9 @@
     "Clear User Data": "Gebruikersgegevens wissen",
     "Clear All Transactions": "Clear All Transactions",
     "Clear All Data": "Clear All Data",
-  "Delete Account": "Delete Account",
-  "Are you sure you want to delete your account?": "Are you sure you want to delete your account?",
-  "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.": "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.",
+    "Delete Account": "Delete Account",
+    "Are you sure you want to delete your account?": "Are you sure you want to delete your account?",
+    "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.": "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.",
     "Export all transaction data to file.": "Alle transactiegegevens naar een bestand exporteren.",
     "Are you sure you want to export all transaction data to file?": "Weet je zeker dat je alle transactiegegevens wilt exporteren?",
     "It may take a long time, please wait for a few minutes.": "Dit kan lang duren; een paar minuten geduld alstublieft.",
@@ -2569,5 +2569,6 @@
     "An error occurred": "Er is een fout opgetreden",
     "Parameter Invalid": "Ongeldige parameter",
     "Numeric Overflow": "Numerieke overloop",
-    "Click to close": "Klik om te sluiten"
+    "Click to close": "Klik om te sluiten",
+    "Create Nonexistent Accounts": "Create Nonexistent Accounts"
 }

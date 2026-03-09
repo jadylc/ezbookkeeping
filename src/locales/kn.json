@@ -2312,9 +2312,9 @@
     "Clear User Data": "ಬಳಕೆದಾರ ಡೇಟಾ ತೆರವುಗೊಳಿಸಿ",
     "Clear All Transactions": "ಎಲ್ಲಾ ವಹಿವಾಟುಗಳನ್ನು ತೆರವುಗೊಳಿಸಿ",
     "Clear All Data": "ಎಲ್ಲಾ ಡೇಟಾವನ್ನು ತೆರವುಗೊಳಿಸಿ",
-  "Delete Account": "Delete Account",
-  "Are you sure you want to delete your account?": "Are you sure you want to delete your account?",
-  "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.": "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.",
+    "Delete Account": "Delete Account",
+    "Are you sure you want to delete your account?": "Are you sure you want to delete your account?",
+    "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.": "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.",
     "Export all transaction data to file.": "ಎಲ್ಲಾ ವಹಿವಾಟು ಡೇಟಾವನ್ನು ಫೈಲ್‌ಗೆ ರಫ್ತು ಮಾಡಿ.",
     "Are you sure you want to export all transaction data to file?": "ಎಲ್ಲಾ ವಹಿವಾಟು ಡೇಟಾವನ್ನು ಫೈಲ್‌ಗೆ ರಫ್ತು ಮಾಡಲು ನೀವು ಖಚಿತವೇ?",
     "It may take a long time, please wait for a few minutes.": "ಇದು ಹೆಚ್ಚು ಸಮಯ ತೆಗೆದುಕೊಳ್ಳಬಹುದು, ದಯವಿಟ್ಟು ಕೆಲವು ನಿಮಿಷಗಳು ಕಾಯಿರಿ.",
@@ -2569,5 +2569,6 @@
     "An error occurred": "ದೋಷ ಸಂಭವಿಸಿದೆ",
     "Parameter Invalid": "ಅಮಾನ್ಯವಾದ ಪ್ಯಾರಾಮೀಟರ್",
     "Numeric Overflow": "ಸಂಖ್ಯಾ ಓವರ್‌ಫ್ಲೋ",
-    "Click to close": "ಮುಚ್ಚಲು ಕ್ಲಿಕ್ ಮಾಡಿ"
+    "Click to close": "ಮುಚ್ಚಲು ಕ್ಲಿಕ್ ಮಾಡಿ",
+    "Create Nonexistent Accounts": "Create Nonexistent Accounts"
 }

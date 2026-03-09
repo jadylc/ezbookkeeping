@@ -2312,9 +2312,9 @@
     "Clear User Data": "清除使用者資料",
     "Clear All Transactions": "清除所有交易",
     "Clear All Data": "清除所有資料",
-  "Delete Account": "\u522a\u9664\u5e33\u865f",
-  "Are you sure you want to delete your account?": "\u60a8\u78ba\u5b9a\u8981\u522a\u9664\u60a8\u7684\u5e33\u865f\u55ce\uff1f",
-  "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.": "\u60a8\u7121\u6cd5\u64a4\u92b7\u6b64\u64cd\u4f5c\u3002\u9019\u5c07\u522a\u9664\u60a8\u7684\u5e33\u865f\u3002\u8acb\u8f38\u5165\u60a8\u7576\u524d\u7684\u5bc6\u78bc\u4ee5\u78ba\u8a8d\u3002",
+    "Delete Account": "刪除帳號",
+    "Are you sure you want to delete your account?": "您確定要刪除您的帳號嗎？",
+    "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.": "您無法撤銷此操作。這將刪除您的帳號。請輸入您當前的密碼以確認。",
     "Export all transaction data to file.": "匯出所有交易資料到檔案。",
     "Are you sure you want to export all transaction data to file?": "您確定要匯出所有交易資料到檔案？",
     "It may take a long time, please wait for a few minutes.": "這可能需要一些時間，請稍等幾分鐘。",
@@ -2569,5 +2569,6 @@
     "An error occurred": "發生錯誤",
     "Parameter Invalid": "參數無效",
     "Numeric Overflow": "數值溢位",
-    "Click to close": "點選關閉"
+    "Click to close": "點選關閉",
+    "Create Nonexistent Accounts": "一鍵建立缺失帳戶"
 }

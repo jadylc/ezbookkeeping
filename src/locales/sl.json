@@ -344,7 +344,7 @@
         "Haiti": "Haiti",
         "Havana": "Havana",
         "Indiana (East)": "Indiana (vzhod)",
-        "Turks and Caicos": "Otoki Turks\u00A0in Caicos",
+        "Turks and Caicos": "Otoki Turks in Caicos",
         "Asuncion": "Asuncion",
         "Atlantic Time (Canada)": "Atlantski čas (Kanada)",
         "Caracas": "Caracas",
@@ -2312,9 +2312,9 @@
     "Clear User Data": "Počisti uporabniške podatke",
     "Clear All Transactions": "Počisti vse transakcije",
     "Clear All Data": "Počisti vse podatke",
-  "Delete Account": "Delete Account",
-  "Are you sure you want to delete your account?": "Are you sure you want to delete your account?",
-  "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.": "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.",
+    "Delete Account": "Delete Account",
+    "Are you sure you want to delete your account?": "Are you sure you want to delete your account?",
+    "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.": "You CANNOT undo this action. This will delete your account. Please enter your current password to confirm.",
     "Export all transaction data to file.": "Izvozi vse podatke o transakcijah v datoteko.",
     "Are you sure you want to export all transaction data to file?": "Ali ste prepričani, da želite izvoziti vse podatke o transakcijah v datoteko?",
     "It may take a long time, please wait for a few minutes.": "Postopek lahko traja dlje časa. Prosimo, počakajte nekaj minut.",
@@ -2569,5 +2569,6 @@
     "An error occurred": "Prišlo je do napake",
     "Parameter Invalid": "Neveljaven parameter",
     "Numeric Overflow": "Številčni preliv (Overflow)",
-    "Click to close": "Kliknite za zaprtje"
+    "Click to close": "Kliknite za zaprtje",
+    "Create Nonexistent Accounts": "Create Nonexistent Accounts"
 }
