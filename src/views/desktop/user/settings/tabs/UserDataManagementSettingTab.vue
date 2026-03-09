@@ -156,11 +156,15 @@
                                 <v-list-item @click="clearAllData">
                                     <v-list-item-title>{{ tt('Clear All Data') }}</v-list-item-title>
                                 </v-list-item>
-                                <v-list-item @click="deleteAccount">
-                                    <v-list-item-title>{{ tt('Delete Account') }}</v-list-item-title>
-                                </v-list-item>
                             </v-list>
                         </v-menu>
+                    </v-btn>
+
+                    <v-btn color="error" variant="outlined"
+                           :disabled="loadingDataStatistics || !currentPasswordForClearData || clearingData"
+                           @click="deleteAccount">
+                        {{ tt('Delete Account') }}
+                        <v-progress-circular indeterminate size="22" class="ms-2" v-if="clearingData"></v-progress-circular>
                     </v-btn>
                 </v-card-text>
             </v-card>
