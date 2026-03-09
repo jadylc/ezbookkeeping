@@ -75,7 +75,7 @@ const props = defineProps<{
 }>();
 
 const { tt } = useI18n();
-const { showToast, showConfirm, openExternalUrl } = useI18nUIComponents();
+const { showToast, showConfirm } = useI18nUIComponents();
 const { version, pinCode, isWebAuthnAvailable, isPinCodeValid, doAfterUnlocked, doRelogin } = useUnlockPageBase();
 
 const settingsStore = useSettingsStore();

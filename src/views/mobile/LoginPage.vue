@@ -195,7 +195,7 @@ const props = defineProps<{
 }>();
 
 const { tt } = useI18n();
-const { showAlert, showConfirm, showToast, openExternalUrl } = useI18nUIComponents();
+const { showAlert, showConfirm, showToast } = useI18nUIComponents();
 
 const rootStore = useRootStore();
 
