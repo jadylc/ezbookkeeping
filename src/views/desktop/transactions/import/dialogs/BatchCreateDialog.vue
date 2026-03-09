@@ -6,6 +6,7 @@
                     <h4 class="text-h4 text-wrap" v-if="type === 'expenseCategory'">{{ tt('Create Nonexistent Expense Categories') }}</h4>
                     <h4 class="text-h4 text-wrap" v-if="type === 'incomeCategory'">{{ tt('Create Nonexistent Income Categories') }}</h4>
                     <h4 class="text-h4 text-wrap" v-if="type === 'transferCategory'">{{ tt('Create Nonexistent Transfer Categories') }}</h4>
+                    <h4 class="text-h4 text-wrap" v-if="type === 'account'">{{ tt('Create Nonexistent Accounts') }}</h4>
                     <h4 class="text-h4 text-wrap" v-if="type === 'tag'">{{ tt('Create Nonexistent Transaction Tags') }}</h4>
                     <v-spacer/>
                     <v-btn density="comfortable" color="default" variant="text" class="ms-2"
@@ -71,19 +72,24 @@ import { ref, useTemplateRef } from 'vue';
 
 import { useI18n } from '@/locales/helpers.ts';
 
+import { useUserStore } from '@/stores/user.ts';
+import { useAccountsStore } from '@/stores/account.ts';
 import { useTransactionCategoriesStore } from '@/stores/transactionCategory.ts';
 import { useTransactionTagsStore } from '@/stores/transactionTag.ts';
 
 import { type NameValue, values } from '@/core/base.ts';
+import { AccountCategory } from '@/core/account.ts';
 import { CategoryType } from '@/core/category.ts';
 import { AUTOMATICALLY_CREATED_CATEGORY_ICON_ID } from '@/consts/icon.ts';
 import { DEFAULT_CATEGORY_COLOR } from '@/consts/color.ts';
 import { DEFAULT_TAG_GROUP_ID } from '@/consts/tag.ts';
 
+import { Account } from '@/models/account.ts';
 import { type TransactionCategoryCreateRequest, type TransactionCategoryCreateWithSubCategories, TransactionCategory } from '@/models/transaction_category.ts';
 import { type TransactionTagCreateRequest, TransactionTag } from '@/models/transaction_tag.ts';
 
 import { isDefined, arrayItemToObjectField } from '@/lib/common.ts';
+import { getCurrentUnixTime } from '@/lib/datetime.ts';
 
 import {
     mdiSelectAll,
@@ -92,7 +98,7 @@ import {
     mdiDotsVertical
 } from '@mdi/js';
 
-export type BatchCreateDialogDataType = 'expenseCategory' | 'incomeCategory' | 'transferCategory' | 'tag';
+export type BatchCreateDialogDataType = 'expenseCategory' | 'incomeCategory' | 'transferCategory' | 'account' | 'tag';
 
 type SnackBarType = InstanceType<typeof SnackBar>;
 
@@ -102,6 +108,8 @@ interface BatchCreateDialogResponse {
 
 const { tt } = useI18n();
 
+const userStore = useUserStore();
+const accountsStore = useAccountsStore();
 const transactionCategoriesStore = useTransactionCategoriesStore();
 const transactionTagsStore = useTransactionTagsStore();
 
@@ -190,6 +198,29 @@ function buildBatchCreateTagResponse(createdTags: TransactionTag[]): BatchCreate
     return response;
 }
 
+function buildBatchCreateAccountResponse(createdAccounts: Account[]): BatchCreateDialogResponse {
+    const displayNameSourceItemMap: Record<string, string> = {};
+    const sourceTargetMap: Record<string, string> = {};
+
+    for (const item of (invalidItems.value || [])) {
+        displayNameSourceItemMap[item.name] = item.value;
+    }
+
+    for (const account of createdAccounts) {
+        const sourceItem = displayNameSourceItemMap[account.name];
+
+        if (!isDefined(sourceItem)) {
+            continue;
+        }
+
+        sourceTargetMap[sourceItem] = account.id;
+    }
+
+    return {
+        sourceTargetMap: sourceTargetMap
+    };
+}
+
 function open(options: { type: BatchCreateDialogDataType, invalidItems?: NameValue[] }): Promise<BatchCreateDialogResponse> {
     type.value = options.type;
     invalidItems.value = options.invalidItems;
@@ -265,6 +296,41 @@ function confirm(): void {
                 showState.value = false;
 
                 resolveFunc?.(buildBatchCreateCategoryResponse(response));
+            }).catch(error => {
+                submitting.value = false;
+
+                if (!error.processed) {
+                    snackbar.value?.showError(error);
+                }
+            });
+        }).catch(error => {
+            submitting.value = false;
+
+            if (!error.processed) {
+                snackbar.value?.showError(error);
+            }
+        });
+    } else if (type.value === 'account') {
+        submitting.value = true;
+
+        const savePromises = selectedNames.value.map(item => {
+            const account = Account.createNewAccount(AccountCategory.Default, userStore.currentUserDefaultCurrency, getCurrentUnixTime());
+            account.name = item;
+
+            return accountsStore.saveAccount({
+                account,
+                subAccounts: [],
+                isEdit: false,
+                clientSessionId: ''
+            });
+        });
+
+        Promise.all(savePromises).then(response => {
+            accountsStore.loadAllAccounts({ force: false }).then(() => {
+                submitting.value = false;
+                showState.value = false;
+
+                resolveFunc?.(buildBatchCreateAccountResponse(response));
             }).catch(error => {
                 submitting.value = false;
 
