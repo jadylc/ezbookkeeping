@@ -24,6 +24,8 @@ type DataManagementsApi struct {
 	ApiUsingConfig
 	tokens                  *services.TokenService
 	users                   *services.UserService
+	userExternalAuths       *services.UserExternalAuthService
+	userAppCloudSettings    *services.UserApplicationCloudSettingsService
 	accounts                *services.AccountService
 	transactions            *services.TransactionService
 	categories              *services.TransactionCategoryService
@@ -43,6 +45,8 @@ var (
 		},
 		tokens:                  services.Tokens,
 		users:                   services.Users,
+		userExternalAuths:       services.UserExternalAuths,
+		userAppCloudSettings:    services.UserApplicationCloudSettings,
 		accounts:                services.Accounts,
 		transactions:            services.Transactions,
 		categories:              services.TransactionCategories,
@@ -167,52 +171,9 @@ func (a *DataManagementsApi) ClearAllDataHandler(c *core.WebContext) (any, *errs
 		return nil, errs.ErrNotPermittedToPerformThisAction
 	}
 
-	err = a.templates.DeleteAllTemplates(c, uid)
+	err = a.clearAllUserBusinessData(c, uid)
 
 	if err != nil {
-		log.Errorf(c, "[data_managements.ClearAllDataHandler] failed to delete all transaction templates, because %s", err.Error())
-		return nil, errs.Or(err, errs.ErrOperationFailed)
-	}
-
-	err = a.transactions.DeleteAllTransactions(c, uid, true)
-
-	if err != nil {
-		log.Errorf(c, "[data_managements.ClearAllDataHandler] failed to delete all transactions, because %s", err.Error())
-		return nil, errs.Or(err, errs.ErrOperationFailed)
-	}
-
-	err = a.categories.DeleteAllCategories(c, uid)
-
-	if err != nil {
-		log.Errorf(c, "[data_managements.ClearAllDataHandler] failed to delete all transaction categories, because %s", err.Error())
-		return nil, errs.Or(err, errs.ErrOperationFailed)
-	}
-
-	err = a.tags.DeleteAllTags(c, uid)
-
-	if err != nil {
-		log.Errorf(c, "[data_managements.ClearAllDataHandler] failed to delete all transaction tags, because %s", err.Error())
-		return nil, errs.Or(err, errs.ErrOperationFailed)
-	}
-
-	err = a.tagGroups.DeleteAllTagGroups(c, uid)
-
-	if err != nil {
-		log.Errorf(c, "[data_managements.ClearAllDataHandler] failed to delete all transaction tag groups, because %s", err.Error())
-		return nil, errs.Or(err, errs.ErrOperationFailed)
-	}
-
-	err = a.userCustomExchangeRates.DeleteAllCustomExchangeRates(c, uid)
-
-	if err != nil {
-		log.Errorf(c, "[data_managements.ClearAllDataHandler] failed to delete all user custom exchange rates, because %s", err.Error())
-		return nil, errs.Or(err, errs.ErrOperationFailed)
-	}
-
-	err = a.insightsExploreres.DeleteAllInsightsExplorers(c, uid)
-
-	if err != nil {
-		log.Errorf(c, "[data_managements.ClearAllDataHandler] failed to delete all insights explorers, because %s", err.Error())
 		return nil, errs.Or(err, errs.ErrOperationFailed)
 	}
 
@@ -249,6 +210,12 @@ func (a *DataManagementsApi) DeleteAccountHandler(c *core.WebContext) (any, *err
 		return nil, errs.ErrNotPermittedToPerformThisAction
 	}
 
+	err = a.clearAllUserBusinessData(c, uid)
+
+	if err != nil {
+		return nil, errs.Or(err, errs.ErrOperationFailed)
+	}
+
 	err = a.users.DeleteUser(c, user.Username)
 
 	if err != nil {
@@ -258,6 +225,89 @@ func (a *DataManagementsApi) DeleteAccountHandler(c *core.WebContext) (any, *err
 
 	log.Infof(c, "[data_managements.DeleteAccountHandler] user \"uid:%d\" has deleted account", uid)
 	return true, nil
+}
+
+func (a *DataManagementsApi) clearAllUserBusinessData(c *core.WebContext, uid int64) error {
+	err := a.templates.DeleteAllTemplates(c, uid)
+
+	if err != nil {
+		log.Errorf(c, "[data_managements.clearAllUserBusinessData] failed to delete all transaction templates, because %s", err.Error())
+		return err
+	}
+
+	err = a.transactions.DeleteAllTransactions(c, uid, true)
+
+	if err != nil {
+		log.Errorf(c, "[data_managements.clearAllUserBusinessData] failed to delete all transactions and accounts, because %s", err.Error())
+		return err
+	}
+
+	err = a.categories.DeleteAllCategories(c, uid)
+
+	if err != nil {
+		log.Errorf(c, "[data_managements.clearAllUserBusinessData] failed to delete all transaction categories, because %s", err.Error())
+		return err
+	}
+
+	err = a.tags.DeleteAllTags(c, uid)
+
+	if err != nil {
+		log.Errorf(c, "[data_managements.clearAllUserBusinessData] failed to delete all transaction tags, because %s", err.Error())
+		return err
+	}
+
+	err = a.tagGroups.DeleteAllTagGroups(c, uid)
+
+	if err != nil {
+		log.Errorf(c, "[data_managements.clearAllUserBusinessData] failed to delete all transaction tag groups, because %s", err.Error())
+		return err
+	}
+
+	err = a.userCustomExchangeRates.DeleteAllCustomExchangeRates(c, uid)
+
+	if err != nil {
+		log.Errorf(c, "[data_managements.clearAllUserBusinessData] failed to delete all user custom exchange rates, because %s", err.Error())
+		return err
+	}
+
+	err = a.insightsExploreres.DeleteAllInsightsExplorers(c, uid)
+
+	if err != nil {
+		log.Errorf(c, "[data_managements.clearAllUserBusinessData] failed to delete all insights explorers, because %s", err.Error())
+		return err
+	}
+
+	err = a.userAppCloudSettings.ClearUserApplicationCloudSettings(c, uid)
+
+	if err != nil {
+		log.Errorf(c, "[data_managements.clearAllUserBusinessData] failed to clear user application cloud settings, because %s", err.Error())
+		return err
+	}
+
+	userExternalAuths, err := a.userExternalAuths.GetUserAllExternalAuthsByUid(c, uid)
+
+	if err != nil {
+		log.Errorf(c, "[data_managements.clearAllUserBusinessData] failed to get user external auths, because %s", err.Error())
+		return err
+	}
+
+	for i := 0; i < len(userExternalAuths); i++ {
+		err = a.userExternalAuths.DeleteUserExternalAuth(c, uid, userExternalAuths[i].ExternalAuthType)
+
+		if err != nil {
+			log.Errorf(c, "[data_managements.clearAllUserBusinessData] failed to delete user external auth \"type:%s\", because %s", userExternalAuths[i].ExternalAuthType, err.Error())
+			return err
+		}
+	}
+
+	err = a.tokens.DeleteTokensBeforeTime(c, uid, time.Now().Unix()+1)
+
+	if err != nil {
+		log.Errorf(c, "[data_managements.clearAllUserBusinessData] failed to delete user tokens, because %s", err.Error())
+		return err
+	}
+
+	return nil
 }
 
 // ClearAllTransactionsHandler deletes all transactions
