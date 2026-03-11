@@ -60,6 +60,8 @@ export interface ApplicationSettings extends BaseApplicationSetting {
     showTagInInsightsExplorerPage: boolean;
     // Account List Page
     totalAmountExcludeAccountIds: Record<string, boolean>;
+    totalAmountExcludeAccountTagIds: Record<string, boolean>;
+    totalAmountTargetCurrency: string;
     accountCategoryOrders: string;
     hideCategoriesWithoutAccounts: boolean;
     // Exchange Rates Data Page
@@ -137,6 +139,8 @@ export const ALL_ALLOWED_CLOUD_SYNC_APP_SETTING_KEY_TYPES: Record<string, UserAp
     'showTagInInsightsExplorerPage': UserApplicationCloudSettingType.Boolean,
     // Account List Page
     'totalAmountExcludeAccountIds': UserApplicationCloudSettingType.StringBooleanMap,
+    'totalAmountExcludeAccountTagIds': UserApplicationCloudSettingType.StringBooleanMap,
+    'totalAmountTargetCurrency': UserApplicationCloudSettingType.String,
     'accountCategoryOrders': UserApplicationCloudSettingType.String,
     'hideCategoriesWithoutAccounts': UserApplicationCloudSettingType.Boolean,
     // Exchange Rates Data Page
@@ -196,6 +200,8 @@ export const DEFAULT_APPLICATION_SETTINGS: ApplicationSettings = {
     showTagInInsightsExplorerPage: true,
     // Account List Page
     totalAmountExcludeAccountIds: {},
+    totalAmountExcludeAccountTagIds: {},
+    totalAmountTargetCurrency: '',
     accountCategoryOrders: '',
     hideCategoriesWithoutAccounts: false,
     // Exchange Rates Data Page

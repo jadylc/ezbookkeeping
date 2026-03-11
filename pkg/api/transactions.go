@@ -1376,10 +1376,6 @@ func (a *TransactionsApi) TransactionMoveAllBetweenAccountsHandler(c *core.WebCo
 		return nil, errs.ErrCannotMoveTransactionFromOrToHiddenAccount
 	}
 
-	if fromAccount.Type == models.ACCOUNT_TYPE_MULTI_SUB_ACCOUNTS || toAccount.Type == models.ACCOUNT_TYPE_MULTI_SUB_ACCOUNTS {
-		return nil, errs.ErrCannotMoveTransactionFromOrToParentAccount
-	}
-
 	if fromAccount.Currency != toAccount.Currency {
 		return nil, errs.ErrCannotMoveTransactionBetweenAccountsWithDifferentCurrencies
 	}

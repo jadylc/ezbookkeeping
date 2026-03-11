@@ -306,6 +306,20 @@
                                     item-value="type"
                                     persistent-placeholder
                                     :readonly="true"
+                                    :disabled="!hasAnyVisibleAccount"
+                                    :label="tt('Filter Account Tags')"
+                                    :placeholder="tt('Filter Account Tags')"
+                                    :model-value="accountTagsIncludedInTotalDisplayContent"
+                                    @click="showAccountTagsIncludedInTotalDialog = true"
+                                />
+                            </v-col>
+                            <v-col cols="12" md="6">
+                                <v-text-field
+                                    class="always-cursor-pointer"
+                                    item-title="displayName"
+                                    item-value="type"
+                                    persistent-placeholder
+                                    :readonly="true"
                                     :label="tt('Account Category Order')"
                                     :placeholder="tt('Account Category Order')"
                                     :model-value="accountCategorysDisplayOrderContent"
@@ -366,6 +380,10 @@
         <account-filter-settings-card type="accountListTotalAmount" :dialog-mode="true"
                                       @settings:change="showAccountsIncludedInTotalDialog = false" />
     </v-dialog>
+    <v-dialog width="800" v-model="showAccountTagsIncludedInTotalDialog">
+        <account-tag-filter-settings-card type="accountListTotalAmount" :dialog-mode="true"
+                                          @settings:change="showAccountTagsIncludedInTotalDialog = false" />
+    </v-dialog>
 
     <account-category-display-order-dialog ref="accountCategorysDisplayOrderDialog" />
 
@@ -375,6 +393,7 @@
 <script setup lang="ts">
 import SnackBar from '@/components/desktop/SnackBar.vue';
 import AccountFilterSettingsCard from '@/views/desktop/common/cards/AccountFilterSettingsCard.vue';
+import AccountTagFilterSettingsCard from '@/views/desktop/common/cards/AccountTagFilterSettingsCard.vue';
 import CategoryFilterSettingsCard from '@/views/desktop/common/cards/CategoryFilterSettingsCard.vue';
 import AccountCategoryDisplayOrderDialog from '@/views/desktop/app/settings/dialogs/AccountCategoryDisplayOrderDialog.vue';
 
@@ -425,6 +444,7 @@ const {
     currencySortByInExchangeRatesPage,
     accountsIncludedInHomePageOverviewDisplayContent,
     accountsIncludedInTotalDisplayContent,
+    accountTagsIncludedInTotalDisplayContent,
     accountCategorysDisplayOrderContent,
     transactionCategoriesIncludedInHomePageOverviewDisplayContent
 } = useAppSettingPageBase();
@@ -439,6 +459,7 @@ const accountCategorysDisplayOrderDialog = useTemplateRef<AccountCategoryDisplay
 const showAccountsIncludedInHomePageOverviewDialog = ref<boolean>(false);
 const showTransactionCategoriesIncludedInHomePageOverviewDialog = ref<boolean>(false);
 const showAccountsIncludedInTotalDialog = ref<boolean>(false);
+const showAccountTagsIncludedInTotalDialog = ref<boolean>(false);
 
 const enableDisableOptions = computed<LocalizedSwitchOption[]>(() => getAllEnableDisableOptions());
 const allInsightsExplorerDefaultDateRanges = computed<LocalizedDateRange[]>(() => getAllDateRanges(DateRangeScene.InsightsExplorer, false));

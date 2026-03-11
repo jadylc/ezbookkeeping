@@ -6,26 +6,67 @@
                     <v-navigation-drawer :permanent="alwaysShowNav" v-model="showNav">
                         <div class="mx-6 my-4">
                             <span class="text-subtitle-2">{{ tt('Net assets') }}</span>
-                            <p class="account-statistic-item-value text-income text-truncate mt-1 mb-3">
-                                <span v-if="!loading || allAccountCount > 0">{{ netAssets }}</span>
+                            <p class="account-statistic-item-value text-income mt-1 mb-3">
+                                <span v-if="!loading || allAccountCount > 0">
+                                    <span class="account-statistic-line" :key="item.currency" v-for="item in netAssetsDisplayItems">
+                                        <span class="account-statistic-amount">{{ item.amount }}</span>
+                                        <span class="account-statistic-currency ms-2">{{ item.currencyName }}</span>
+                                    </span>
+                                </span>
                                 <span v-else-if="loading && allAccountCount <= 0">
                                     <v-skeleton-loader class="skeleton-no-margin pt-2 pb-1" type="text" :loading="true"></v-skeleton-loader>
                                 </span>
                             </p>
                             <span class="text-subtitle-2">{{ tt('Total liabilities') }}</span>
-                            <p class="account-statistic-item-value text-expense text-truncate mt-1 mb-3">
-                                <span v-if="!loading || allAccountCount > 0">{{ totalLiabilities }}</span>
+                            <p class="account-statistic-item-value text-expense mt-1 mb-3">
+                                <span v-if="!loading || allAccountCount > 0">
+                                    <span class="account-statistic-line" :key="item.currency" v-for="item in totalLiabilitiesDisplayItems">
+                                        <span class="account-statistic-amount">{{ item.amount }}</span>
+                                        <span class="account-statistic-currency ms-2">{{ item.currencyName }}</span>
+                                    </span>
+                                </span>
                                 <span v-else-if="loading && allAccountCount <= 0">
                                     <v-skeleton-loader class="skeleton-no-margin pt-2 pb-1" type="text" :loading="true"></v-skeleton-loader>
                                 </span>
                             </p>
                             <span class="text-subtitle-2">{{ tt('Total assets') }}</span>
                             <p class="account-statistic-item-value mt-1">
-                                <span v-if="!loading || allAccountCount > 0">{{ totalAssets }}</span>
+                                <span v-if="!loading || allAccountCount > 0">
+                                    <span class="account-statistic-line" :key="item.currency" v-for="item in totalAssetsDisplayItems">
+                                        <span class="account-statistic-amount">{{ item.amount }}</span>
+                                        <span class="account-statistic-currency ms-2">{{ item.currencyName }}</span>
+                                    </span>
+                                </span>
                                 <span v-else-if="loading && allAccountCount <= 0">
                                     <v-skeleton-loader class="skeleton-no-margin pt-2 pb-1" type="text" :loading="true"></v-skeleton-loader>
                                 </span>
                             </p>
+                            <div class="mt-4">
+                                <span class="text-subtitle-2">{{ tt('Total Currency') }}</span>
+                                <div class="d-flex flex-wrap mt-2 gap-2">
+                                    <v-chip
+                                        v-for="currency in totalAmountCurrencyOptions"
+                                        :key="currency"
+                                        :color="currency === totalAmountTargetCurrency ? 'primary' : 'default'"
+                                        variant="tonal"
+                                        size="small"
+                                        @click="setTotalAmountTargetCurrency(currency)"
+                                    >
+                                        <span class="text-truncate">{{ currency ? getCurrencyName(currency) : tt('All Currencies') }}</span>
+                                        <span class="ms-1 text-caption" v-if="currency">({{ currency }})</span>
+                                    </v-chip>
+                                </div>
+                                <v-btn class="mt-3" size="small" variant="tonal" color="default"
+                                       :disabled="loading || !hasAnyVisibleAccount"
+                                       @click="showAccountsIncludedInTotalDialog = true">
+                                    {{ tt('Accounts Included in Total') }}
+                                </v-btn>
+                                <v-btn class="mt-2" size="small" variant="tonal" color="default"
+                                       :disabled="loading || !hasAnyVisibleAccount"
+                                       @click="showAccountTagsIncludedInTotalDialog = true">
+                                    {{ tt('Filter Account Tags') }}
+                                </v-btn>
+                            </div>
                         </div>
                         <v-divider />
                         <v-tabs show-arrows class="account-category-tabs my-4" direction="vertical"
@@ -40,7 +81,7 @@
                                         <v-skeleton-loader class="skeleton-no-margin"
                                                            width="100px" height="16" type="text" :loading="true"></v-skeleton-loader>
                                     </small>
-                                    <span class="text-truncate text-start">{{ tt(accountCategory.name) }}</span>
+                                    <span class="text-truncate text-start">{{ tt(accountCategory.name) }} ({{ getAccountCategoryCount(accountCategory) }})</span>
                                 </div>
                             </v-tab>
                         </v-tabs>
@@ -81,10 +122,6 @@
                                                         <v-list-item :prepend-icon="mdiEyeOffOutline"
                                                                      :title="tt('Hide Hidden Accounts')"
                                                                      v-if="showHidden" @click="showHidden = false"></v-list-item>
-                                                        <v-divider class="my-2" v-if="hasAnyVisibleAccount"/>
-                                                        <v-list-item :prepend-icon="mdiCalculatorVariantOutline"
-                                                                     :title="tt('Set Accounts Included in Total')"
-                                                                     v-if="hasAnyVisibleAccount" @click="showAccountsIncludedInTotalDialog = true"></v-list-item>
                                                     </v-list>
                                                 </v-menu>
                                             </v-btn>
@@ -162,11 +199,21 @@
                                                                 <div class="account-title d-flex align-baseline">
                                                                     <ItemIcon size="1.5rem" icon-type="account" :icon-id="element.icon"
                                                                               :color="element.color" :hidden-status="element.hidden" />
-                                                                    <span class="account-name text-truncate ms-2">{{ element.name }}</span>
-                                                                    <small class="account-currency text-truncate ms-2">
-                                                                        {{ accountCurrency(element) }}
-                                                                    </small>
-                                                                    <v-spacer/>
+                                                                    <div class="account-title-text ms-2 flex-grow-1">
+                                                                        <div class="d-flex align-baseline flex-wrap">
+                                                                            <span class="account-name text-truncate">{{ element.name }}</span>
+                                                                            <small class="account-currency text-truncate ms-2">
+                                                                                {{ accountCurrency(element) }}
+                                                                            </small>
+                                                                        </div>
+                                                                        <div class="account-tags" v-if="getAccountTagNames(element).length">
+                                                                            <v-chip size="x-small" variant="outlined" class="me-1 mb-1"
+                                                                                    :key="tagName"
+                                                                                    v-for="tagName in getAccountTagNames(element)">
+                                                                                {{ tagName }}
+                                                                            </v-chip>
+                                                                        </div>
+                                                                    </div>
                                                                     <span class="align-self-center">
                                                                         <v-icon :class="!loading && activeAccountCategoryVisibleAccountCount > 1 ? 'drag-handle' : 'disabled'"
                                                                                 :icon="mdiDrag"/>
@@ -174,57 +221,33 @@
                                                                     </span>
                                                                 </div>
 
-                                                                <div class="mt-4" v-if="element.type === AccountType.MultiSubAccounts.type">
-                                                                    <v-btn-toggle
-                                                                        class="account-subaccounts"
-                                                                        variant="outlined"
-                                                                        color="primary"
-                                                                        density="compact"
-                                                                        mandatory="force"
-                                                                        divided rounded="xl"
-                                                                        :disabled="loading"
-                                                                        v-model="activeSubAccount[element.id]"
-                                                                    >
-                                                                        <v-btn :value="''">
-                                                                            <span>{{ tt('All') }}</span>
-                                                                        </v-btn>
-                                                                        <v-btn :key="subAccount.id" :value="subAccount.id"
-                                                                               v-for="subAccount in element.subAccounts"
-                                                                               v-show="showHidden || !subAccount.hidden">
-                                                                            <ItemIcon size="1.5rem" icon-type="account" :icon-id="subAccount.icon"
-                                                                                      :color="subAccount.color" :hidden-status="subAccount.hidden" />
-                                                                            <span class="ms-2">{{ subAccount.name }}</span>
-                                                                        </v-btn>
-                                                                    </v-btn-toggle>
-                                                                </div>
                                                             </template>
 
                                                             <v-divider/>
 
-                                                            <v-card-text v-if="element.getAccountOrSubAccountComment(activeSubAccount[element.id])">
-                                                                {{ element.getAccountOrSubAccountComment(activeSubAccount[element.id]) }}
+                                                            <v-card-text v-if="element.comment">
+                                                                {{ element.comment }}
                                                             </v-card-text>
 
                                                             <v-card-text>
                                                                 <div class="d-flex account-toolbar align-center">
-                                                                    <v-btn class="px-2" density="comfortable" color="default" variant="text"
+                                                                   <v-btn class="px-2" density="comfortable" color="default" variant="text"
                                                                            :disabled="loading" :prepend-icon="mdiListBoxOutline"
-                                                                           :to="`/transaction/list?accountIds=${element.getAccountOrSubAccountId(activeSubAccount[element.id])}`">
+                                                                           :to="`/transaction/list?accountIds=${element.id}`">
                                                                         {{ tt('Transaction List') }}
                                                                     </v-btn>
-                                                                    <v-btn class="px-2 ms-1" density="comfortable" color="default" variant="text"
+                                                                   <v-btn class="px-2 ms-1" density="comfortable" color="default" variant="text"
                                                                            :disabled="loading" :prepend-icon="mdiInvoiceListOutline"
-                                                                           @click="showReconciliationStatementCustomDateRangeDialog(element.getAccountOrSubAccount(activeSubAccount[element.id]))"
-                                                                           v-if="element.type === AccountType.SingleAccount.type || element.getSubAccount(activeSubAccount[element.id])">
+                                                                           @click="showReconciliationStatementCustomDateRangeDialog(element)">
                                                                         {{ tt('Reconciliation Statement') }}
                                                                         <v-menu activator="parent" :open-on-hover="true">
                                                                             <v-list>
                                                                                 <template :key="dateRange.type"
-                                                                                          v-for="dateRange in accountReconciliationStatementDateRanges(element.getAccountOrSubAccount(activeSubAccount[element.id]))">
+                                                                                          v-for="dateRange in accountReconciliationStatementDateRanges(element)">
                                                                                     <v-list-item class="text-sm" density="compact"
                                                                                                  :value="dateRange.type">
                                                                                         <v-list-item-title class="cursor-pointer"
-                                                                                                           @click="showReconciliationStatementCustomDateRangeDialog(element.getAccountOrSubAccount(activeSubAccount[element.id]), dateRange.type)">
+                                                                                                           @click="showReconciliationStatementCustomDateRangeDialog(element, dateRange.type)">
                                                                                             <div class="d-flex align-center">
                                                                                                 <span class="text-sm ms-3">{{ dateRange.displayName }}</span>
                                                                                             </div>
@@ -237,45 +260,55 @@
                                                                     <v-btn class="px-2 ms-1" density="comfortable" color="default" variant="text"
                                                                            :class="{ 'd-none': loading, 'hover-display': !loading }"
                                                                            :disabled="loading"
-                                                                           :prepend-icon="element.isAccountOrSubAccountHidden(activeSubAccount[element.id]) ? mdiEyeOutline : mdiEyeOffOutline"
-                                                                           v-if="!activeSubAccount[element.id] || element.getSubAccount(activeSubAccount[element.id])"
-                                                                           @click="hide(element, element.getAccountOrSubAccount(activeSubAccount[element.id]), !element.isAccountOrSubAccountHidden(activeSubAccount[element.id]))">
-                                                                        {{ element.isAccountOrSubAccountHidden(activeSubAccount[element.id]) ? tt('Show') : tt('Hide') }}
+                                                                           :prepend-icon="element.hidden ? mdiEyeOutline : mdiEyeOffOutline"
+                                                                           @click="hide(element, !element.hidden)">
+                                                                        {{ element.hidden ? tt('Show') : tt('Hide') }}
                                                                     </v-btn>
                                                                     <v-btn class="px-2 ms-1" density="comfortable" color="default" variant="text"
                                                                            :class="{ 'd-none': loading, 'hover-display': !loading }"
                                                                            :disabled="loading" :prepend-icon="mdiPencilOutline"
-                                                                           v-if="!activeSubAccount[element.id] || element.getSubAccount(activeSubAccount[element.id])"
                                                                            @click="edit(element)">
                                                                         {{ tt('Edit') }}
                                                                     </v-btn>
                                                                     <v-btn class="px-2 ms-1" density="comfortable" color="default" variant="text"
                                                                            :class="{ 'd-none': loading, 'hover-display': !loading }"
-                                                                           :disabled="loading" :prepend-icon="mdiDotsHorizontalCircleOutline"
-                                                                           v-if="element.type === AccountType.SingleAccount.type || element.getSubAccount(activeSubAccount[element.id])">
+                                                                           :disabled="loading" :prepend-icon="mdiDotsHorizontalCircleOutline">
                                                                         {{ tt('More') }}
                                                                         <v-menu activator="parent" :open-on-hover="true">
                                                                             <v-list>
                                                                                 <v-list-item class="text-sm" density="compact"
                                                                                              :title="tt('Move All Transactions')"
                                                                                              :prepend-icon="mdiSwapHorizontal"
-                                                                                             @click="moveAllTransactions(element.getAccountOrSubAccount(activeSubAccount[element.id]))"></v-list-item>
+                                                                                             @click="moveAllTransactions(element)"></v-list-item>
                                                                                 <v-list-item class="text-sm" density="compact"
                                                                                              :title="tt('Clear All Transactions')"
                                                                                              :prepend-icon="mdiEraser"
-                                                                                             @click="clearAllTransactions(element.getAccountOrSubAccount(activeSubAccount[element.id]))"></v-list-item>
+                                                                                             @click="clearAllTransactions(element)"></v-list-item>
                                                                             </v-list>
                                                                         </v-menu>
                                                                     </v-btn>
                                                                     <v-btn class="px-2 ms-1" density="comfortable" color="default" variant="text"
                                                                            :class="{ 'd-none': loading, 'hover-display': !loading }"
                                                                            :disabled="loading" :prepend-icon="mdiDeleteOutline"
-                                                                           v-if="!activeSubAccount[element.id] || element.getSubAccount(activeSubAccount[element.id])"
                                                                            @click="remove(element)">
                                                                         {{ tt('Delete') }}
                                                                     </v-btn>
                                                                     <v-spacer/>
-                                                                    <span class="account-balance ms-2">{{ accountBalance(element, activeSubAccount[element.id]) }}</span>
+                                                                    <span class="account-balance ms-2">
+                                                                        <span class="account-balance-line">
+                                                                            <span>{{ accountBalance(element) }}</span>
+                                                                            <span class="account-balance-code ms-1" v-if="element.currency">
+                                                                                ({{ element.currency }})
+                                                                            </span>
+                                                                        </span>
+                                                                        <span class="account-balance-converted ms-2"
+                                                                              v-if="accountBalanceInDefaultCurrency(element)">
+                                                                            <span>{{ accountBalanceInDefaultCurrency(element) }}</span>
+                                                                            <span class="account-balance-code ms-1" v-if="defaultCurrency">
+                                                                                ({{ defaultCurrency }})
+                                                                            </span>
+                                                                        </span>
+                                                                    </span>
                                                                 </div>
                                                             </v-card-text>
                                                         </v-card>
@@ -296,6 +329,10 @@
     <v-dialog width="800" v-model="showAccountsIncludedInTotalDialog">
         <account-filter-settings-card type="accountListTotalAmount" :dialog-mode="true"
                                       @settings:change="showAccountsIncludedInTotalDialog = false" />
+    </v-dialog>
+    <v-dialog width="800" v-model="showAccountTagsIncludedInTotalDialog">
+        <account-tag-filter-settings-card type="accountListTotalAmount" :dialog-mode="true"
+                                          @settings:change="showAccountTagsIncludedInTotalDialog = false" />
     </v-dialog>
 
     <edit-dialog ref="editDialog" />
@@ -321,6 +358,7 @@ import ReconciliationStatementDialog from './list/dialogs/ReconciliationStatemen
 import MoveAllTransactionsDialog from '@/views/desktop/accounts/list/dialogs/MoveAllTransactionsDialog.vue';
 import ClearAllTransactionsDialog from '@/views/desktop/accounts/list/dialogs/ClearAllTransactionsDialog.vue';
 import AccountFilterSettingsCard from '@/views/desktop/common/cards/AccountFilterSettingsCard.vue';
+import AccountTagFilterSettingsCard from '@/views/desktop/common/cards/AccountTagFilterSettingsCard.vue';
 
 import { ref, computed, useTemplateRef, watch } from 'vue';
 import { useDisplay } from 'vuetify';
@@ -330,9 +368,10 @@ import { useAccountListPageBase } from '@/views/base/accounts/AccountListPageBas
 
 import { useSettingsStore } from '@/stores/setting.ts';
 import { useAccountsStore } from '@/stores/account.ts';
+import { useAccountTagsStore } from '@/stores/accountTag.ts';
 
 import { DateRange, DateRangeScene, type LocalizedDateRange, type TimeRangeAndDateType } from '@/core/datetime.ts';
-import { AccountType, AccountCategory } from '@/core/account.ts';
+import { AccountCategory } from '@/core/account.ts';
 import type { Account } from '@/models/account.ts';
 
 import { isNumber } from '@/lib/common.ts';
@@ -341,7 +380,6 @@ import { getDateRangeByDateType, getDateRangeByBillingCycleDateType } from '@/li
 import {
     mdiEyeOutline,
     mdiEyeOffOutline,
-    mdiCalculatorVariantOutline,
     mdiRefresh,
     mdiSquareRounded,
     mdiMenu,
@@ -365,7 +403,7 @@ type ClearAllTransactionsDialogType = InstanceType<typeof ClearAllTransactionsDi
 
 const display = useDisplay();
 
-const { tt, getAllDateRanges, getCurrencyName, joinMultiText } = useI18n();
+const { tt, getAllDateRanges, getCurrencyName } = useI18n();
 
 const {
     loading,
@@ -374,20 +412,24 @@ const {
     showAccountBalance,
     customAccountCategoryOrder,
     defaultAccountCategory,
+    defaultCurrency,
     firstDayOfWeek,
     fiscalYearStart,
-    allAccounts,
     allCategorizedAccountsMap,
     allAccountCount,
-    netAssets,
-    totalAssets,
-    totalLiabilities,
+    totalAmountTargetCurrency,
+    totalAmountCurrencyOptions,
+    netAssetsDisplayItems,
+    totalAssetsDisplayItems,
+    totalLiabilitiesDisplayItems,
     accountCategoryTotalBalance,
-    accountBalance
+    accountBalance,
+    accountBalanceInDefaultCurrency
 } = useAccountListPageBase();
 
 const settingsStore = useSettingsStore();
 const accountsStore = useAccountsStore();
+const accountTagsStore = useAccountTagsStore();
 
 const confirmDialog = useTemplateRef<ConfirmDialogType>('confirmDialog');
 const snackbar = useTemplateRef<SnackBarType>('snackbar');
@@ -398,11 +440,11 @@ const clearAllTransactionsDialog = useTemplateRef<ClearAllTransactionsDialogType
 
 const activeAccountCategoryType = ref<number>(defaultAccountCategory.value.type);
 const activeTab = ref<string>('accountPage');
-const activeSubAccount = ref<Record<string, string>>({});
 const accountToShowReconciliationStatement = ref<Account | null>(null);
 const alwaysShowNav = ref<boolean>(display.mdAndUp.value);
 const showNav = ref<boolean>(display.mdAndUp.value);
 const showAccountsIncludedInTotalDialog = ref<boolean>(false);
+const showAccountTagsIncludedInTotalDialog = ref<boolean>(false);
 const showCustomDateRangeDialog = ref<boolean>(false);
 
 const hideAccountCategoriesWithoutAccounts = computed<boolean>(() => settingsStore.appSettings.hideCategoriesWithoutAccounts);
@@ -439,19 +481,17 @@ const activeAccountCategoryVisibleAccountCount = computed<number>(() => {
 function reload(force: boolean): void {
     loading.value = true;
 
+    accountTagsStore.loadAllTags({
+        force: force
+    }).catch(() => {
+        // ignore tag loading errors for account list totals
+    });
+
     accountsStore.loadAllAccounts({
         force: force
     }).then(() => {
         loading.value = false;
         displayOrderModified.value = false;
-
-        if (allAccounts.value) {
-            for (const account of allAccounts.value) {
-                if (account.type === AccountType.MultiSubAccounts.type && !activeSubAccount.value[account.id]) {
-                    activeSubAccount.value[account.id] = '';
-                }
-            }
-        }
 
         if (force) {
             snackbar.value?.showMessage('Account list has been updated');
@@ -473,16 +513,53 @@ function hasAccount(accountCategory: AccountCategory): boolean {
     return accountsStore.hasAccount(accountCategory, !showHidden.value);
 }
 
-function accountCurrency(account: Account): string | null {
-    if (account.type === AccountType.SingleAccount.type) {
-        return getCurrencyName(account.currency);
-    } else if (account.type === AccountType.MultiSubAccounts.type) {
-        const subAccountCurrencies = account.getSubAccountCurrencies(showHidden.value, activeSubAccount.value[account.id])
-            .map(currencyCode => getCurrencyName(currencyCode));
-        return joinMultiText(subAccountCurrencies);
-    } else {
-        return null;
+function getAccountCategoryCount(accountCategory: AccountCategory): number {
+    const categorizedAccounts = allCategorizedAccountsMap.value[accountCategory.type];
+
+    if (!categorizedAccounts || !categorizedAccounts.accounts || !categorizedAccounts.accounts.length) {
+        return 0;
     }
+
+    if (showHidden.value) {
+        return categorizedAccounts.accounts.length;
+    }
+
+    let count = 0;
+
+    for (const account of categorizedAccounts.accounts) {
+        if (!account.hidden) {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+function accountCurrency(account: Account): string | null {
+    return getCurrencyName(account.currency);
+}
+
+function getAccountTagNames(account: Account): string[] {
+    if (!account) {
+        return [];
+    }
+
+    const rawTags = account.tags && account.tags.length ? account.tags : (account.tag ? [account.tag] : []);
+    const tagSet = new Set<string>();
+
+    for (const rawTag of rawTags) {
+        const tagName = rawTag?.trim();
+
+        if (tagName) {
+            tagSet.add(tagName);
+        }
+    }
+
+    return Array.from(tagSet);
+}
+
+function setTotalAmountTargetCurrency(currency: string): void {
+    settingsStore.setTotalAmountTargetCurrency(currency);
 }
 
 function accountReconciliationStatementDateRanges(account: Account): LocalizedDateRange[] {
@@ -568,17 +645,13 @@ function clearAllTransactions(account: Account): void {
     });
 }
 
-function hide(account: Account, targetAccount: Account, hidden: boolean): void {
+function hide(targetAccount: Account, hidden: boolean): void {
     loading.value = true;
 
     accountsStore.hideAccount({
         account: targetAccount,
         hidden: hidden
     }).then(() => {
-        if (hidden && !showHidden.value && activeSubAccount.value[account.id]) {
-            activeSubAccount.value[account.id] = '';
-        }
-
         loading.value = false;
     }).catch(error => {
         loading.value = false;
@@ -590,47 +663,21 @@ function hide(account: Account, targetAccount: Account, hidden: boolean): void {
 }
 
 function remove(account: Account): void {
-    if (activeSubAccount.value[account.id]) {
-        const subAccount: Account | null = account.getSubAccount(activeSubAccount.value[account.id]);
+    confirmDialog.value?.open('Are you sure you want to delete this account?').then(() => {
+        loading.value = true;
 
-        if (!subAccount) {
-            snackbar.value?.showMessage('Unable to delete this sub-account');
-            return;
-        }
+        accountsStore.deleteAccount({
+            account: account
+        }).then(() => {
+            loading.value = false;
+        }).catch(error => {
+            loading.value = false;
 
-        confirmDialog.value?.open('Are you sure you want to delete this sub-account?').then(() => {
-            loading.value = true;
-
-            accountsStore.deleteSubAccount({
-                subAccount: subAccount
-            }).then(() => {
-                activeSubAccount.value[account.id] = '';
-                loading.value = false;
-            }).catch(error => {
-                loading.value = false;
-
-                if (!error.processed) {
-                    snackbar.value?.showError(error);
-                }
-            });
+            if (!error.processed) {
+                snackbar.value?.showError(error);
+            }
         });
-    } else {
-        confirmDialog.value?.open('Are you sure you want to delete this account?').then(() => {
-            loading.value = true;
-
-            accountsStore.deleteAccount({
-                account: account
-            }).then(() => {
-                loading.value = false;
-            }).catch(error => {
-                loading.value = false;
-
-                if (!error.processed) {
-                    snackbar.value?.showError(error);
-                }
-            });
-        });
-    }
+    });
 }
 
 function saveSortResult(): void {
@@ -714,6 +761,17 @@ reload(false);
     font-size: 1rem;
 }
 
+.account-statistic-line {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.account-statistic-currency {
+    font-size: 0.85rem;
+    color: rgba(var(--v-theme-on-background), var(--v-medium-emphasis-opacity));
+}
+
 .account-category-tabs .v-tab.v-tab.v-btn {
     height: calc(var(--v-tabs-height) * 1.5);
 }
@@ -756,38 +814,11 @@ reload(false);
     color: rgba(var(--v-theme-on-background), var(--v-medium-emphasis-opacity));
 }
 
-.account-card .account-subaccounts {
-    overflow-x: auto;
-    white-space: nowrap;
-}
-
-.account-card .account-subaccounts.v-btn-toggle {
-    height: auto !important;
-    padding: 0;
-    border: none;
-}
-
-.account-card .account-subaccounts.v-btn-toggle > .v-btn {
-    border-color: rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
-.account-card .account-subaccounts.v-btn-toggle > .v-btn:not(:first-child) {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-    border-left: none;
-}
-
-.account-card .account-subaccounts.v-btn-toggle > .v-btn:not(:last-child) {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-}
-
-.account-card .account-subaccounts.v-btn-toggle > .v-btn {
-    border: thin solid rgba(var(--v-border-color), var(--v-border-opacity));
-}
-
-.account-card .account-subaccounts.v-btn-toggle button.v-btn {
-    width: auto !important;
+.account-card .account-tags {
+    margin-top: 4px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
 }
 
 .account-card .account-toolbar {
@@ -806,5 +837,20 @@ reload(false);
 .account-card .account-balance {
     font-size: 1.25rem;
     color: rgba(var(--v-theme-on-background), var(--v-high-emphasis-opacity));
+}
+
+.account-card .account-balance-line {
+    display: inline-flex;
+    align-items: baseline;
+}
+
+.account-card .account-balance-code {
+    font-size: 0.85rem;
+    color: rgba(var(--v-theme-on-background), var(--v-medium-emphasis-opacity));
+}
+
+.account-card .account-balance-converted {
+    font-size: 0.9rem;
+    color: rgba(var(--v-theme-on-background), var(--v-medium-emphasis-opacity));
 }
 </style>

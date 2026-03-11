@@ -181,6 +181,19 @@
             </f7-list-item>
             <f7-list-item
                 class="item-truncate-after-text"
+                link="/settings/filter/account_tag?type=accountListTotalAmount"
+                :disabled="!hasAnyVisibleAccount">
+                <template #after-title>
+                    <div class="item-actual-title">
+                        <span>{{ tt('Filter Account Tags') }}</span>
+                    </div>
+                </template>
+                <template #after>
+                    <div>{{ accountTagsIncludedInTotalDisplayContent }}</div>
+                </template>
+            </f7-list-item>
+            <f7-list-item
+                class="item-truncate-after-text"
                 link="/settings/account_category_display_order">
                 <template #after-title>
                     <div class="item-actual-title">
@@ -260,6 +273,7 @@ const {
     currencySortByInExchangeRatesPage,
     accountsIncludedInHomePageOverviewDisplayContent,
     accountsIncludedInTotalDisplayContent,
+    accountTagsIncludedInTotalDisplayContent,
     accountCategorysDisplayOrderContent,
     transactionCategoriesIncludedInHomePageOverviewDisplayContent
 } = useAppSettingPageBase();

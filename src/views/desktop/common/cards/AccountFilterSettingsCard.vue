@@ -71,9 +71,8 @@
 
                                 <v-list-item>
                                     <template #prepend>
-                                        <v-checkbox :model-value="isAccountOrSubAccountsAllChecked(account, filterAccountIds)"
-                                                    :indeterminate="isAccountOrSubAccountsHasButNotAllChecked(account, filterAccountIds)"
-                                                    @update:model-value="updateAccountOrSubAccountsSelected(account, $event)">
+                                        <v-checkbox :model-value="isAccountChecked(account, filterAccountIds)"
+                                                    @update:model-value="updateAccountSelected(account, $event)">
                                             <template #label>
                                                 <ItemIcon class="d-flex" icon-type="account" :icon-id="account.icon"
                                                           :color="account.color" :hidden-status="account.hidden"></ItemIcon>
@@ -82,29 +81,6 @@
                                         </v-checkbox>
                                     </template>
                                 </v-list-item>
-
-                                <v-divider v-if="account.type === AccountType.MultiSubAccounts.type && account.subAccounts && account.subAccounts.length > 0"/>
-
-                                <v-list rounded density="comfortable" class="pa-0 ms-4"
-                                        v-if="account.type === AccountType.MultiSubAccounts.type && account.subAccounts && account.subAccounts.length > 0">
-                                    <template :key="subAccount.id"
-                                              v-for="(subAccount, subIdx) in account.subAccounts">
-                                        <v-divider v-if="subIdx > 0"/>
-
-                                        <v-list-item v-if="showHidden || !subAccount.hidden">
-                                            <template #prepend>
-                                                <v-checkbox :model-value="isAccountChecked(subAccount, filterAccountIds)"
-                                                            @update:model-value="updateAccountSelected(subAccount, $event)">
-                                                    <template #label>
-                                                        <ItemIcon class="d-flex" icon-type="account" :icon-id="subAccount.icon"
-                                                                  :color="subAccount.color" :hidden-status="subAccount.hidden"></ItemIcon>
-                                                        <span class="ms-3">{{ subAccount.name }}</span>
-                                                    </template>
-                                                </v-checkbox>
-                                            </template>
-                                        </v-list-item>
-                                    </template>
-                                </v-list>
                             </template>
                         </v-list>
                     </v-expansion-panel-text>
@@ -136,16 +112,13 @@ import {
 
 import { useAccountsStore } from '@/stores/account.ts';
 
-import { AccountType, AccountCategory } from '@/core/account.ts';
+import { AccountCategory } from '@/core/account.ts';
 import type { Account } from '@/models/account.ts';
 
 import {
-    selectAccountOrSubAccounts,
     selectAll,
     selectNone,
-    selectInvert,
-    isAccountOrSubAccountsAllChecked,
-    isAccountOrSubAccountsHasButNotAllChecked
+    selectInvert
 } from '@/lib/account.ts';
 
 import {
@@ -213,14 +186,6 @@ function init(): void {
             snackbar.value?.showError(error);
         }
     });
-}
-
-function updateAccountOrSubAccountsSelected(account: Account, value: boolean | null): void {
-    selectAccountOrSubAccounts(filterAccountIds.value, account, !value);
-
-    if (props.autoSave) {
-        save();
-    }
 }
 
 function updateAccountSelected(account: Account, value: boolean | null): void {

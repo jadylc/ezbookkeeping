@@ -25,6 +25,7 @@ import AccountCategoryDisplayOrderSettingsPage from '@/views/mobile/settings/Acc
 import ApplicationCloudSyncSettingsPage from '@/views/mobile/settings/ApplicationCloudSyncSettingsPage.vue';
 import BrowserCacheSettingPage from '@/views/mobile/settings/BrowserCacheSettingPage.vue';
 import AccountFilterSettingsPage from '@/views/mobile/settings/AccountFilterSettingsPage.vue';
+import AccountTagFilterSettingsPage from '@/views/mobile/settings/AccountTagFilterSettingsPage.vue';
 import CategoryFilterSettingsPage from '@/views/mobile/settings/CategoryFilterSettingsPage.vue';
 import TransactionTagFilterSettingsPage from '@/views/mobile/settings/TransactionTagFilterSettingsPage.vue';
 
@@ -46,6 +47,7 @@ import CategoryPresetPage from '@/views/mobile/categories/PresetPage.vue';
 
 import TagListPage from '@/views/mobile/tags/ListPage.vue';
 import TagGroupListPage from '@/views/mobile/tags/GroupListPage.vue';
+import AccountTagListPage from '@/views/mobile/account_tags/ListPage.vue';
 
 import TemplateListPage from '@/views/mobile/templates/ListPage.vue';
 
@@ -227,6 +229,11 @@ const routes: Router.RouteParameters[] = [
         beforeEnter: [checkLogin]
     },
     {
+        path: '/settings/filter/account_tag',
+        async: asyncResolve(AccountTagFilterSettingsPage),
+        beforeEnter: [checkLogin]
+    },
+    {
         path: '/settings/filter/category',
         async: asyncResolve(CategoryFilterSettingsPage),
         beforeEnter: [checkLogin]
@@ -329,6 +336,11 @@ const routes: Router.RouteParameters[] = [
     {
         path: '/tag/list',
         async: asyncResolve(TagListPage),
+        beforeEnter: [checkLogin]
+    },
+    {
+        path: '/account/tag/list',
+        async: asyncResolve(AccountTagListPage),
         beforeEnter: [checkLogin]
     },
     {

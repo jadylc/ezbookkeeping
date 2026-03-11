@@ -575,14 +575,6 @@ func (l *UserDataCli) CheckTransactionAndAccount(c *core.CliContext, username st
 		return false, err
 	}
 
-	accountHasChild := make(map[int64]bool)
-
-	for _, account := range accountMap {
-		if account.ParentAccountId > models.LevelOneAccountParentId {
-			accountHasChild[account.ParentAccountId] = true
-		}
-	}
-
 	allTransactions, err := l.transactions.GetAllTransactions(c, uid, pageCountForGettingTransactions, false)
 
 	if err != nil {
@@ -596,7 +588,7 @@ func (l *UserDataCli) CheckTransactionAndAccount(c *core.CliContext, username st
 	for i := len(allTransactions) - 1; i >= 0; i-- {
 		transaction := allTransactions[i]
 
-		err := l.checkTransactionAccount(c, transaction, accountMap, accountHasChild)
+		err := l.checkTransactionAccount(c, transaction, accountMap)
 
 		if err != nil {
 			return false, err
@@ -971,30 +963,16 @@ func (l *UserDataCli) getUserEssentialDataForImport(c *core.CliContext, uid int6
 	return accountMap, expenseCategoryMap, incomeCategoryMap, transferCategoryMap, tagMap, nil
 }
 
-func (l *UserDataCli) checkTransactionAccount(c *core.CliContext, transaction *models.Transaction, accountMap map[int64]*models.Account, accountHasChild map[int64]bool) error {
-	account, exists := accountMap[transaction.AccountId]
-
-	if !exists {
+func (l *UserDataCli) checkTransactionAccount(c *core.CliContext, transaction *models.Transaction, accountMap map[int64]*models.Account) error {
+	if _, exists := accountMap[transaction.AccountId]; !exists {
 		log.CliErrorf(c, "[user_data.checkTransactionAccount] the account \"id:%d\" of transaction \"id:%d\" does not exist", transaction.AccountId, transaction.TransactionId)
 		return errs.ErrAccountNotFound
 	}
 
-	if account.ParentAccountId == models.LevelOneAccountParentId && accountHasChild[account.AccountId] {
-		log.CliErrorf(c, "[user_data.checkTransactionAccount] the account \"id:%d\" of transaction \"id:%d\" is not a sub-account", transaction.AccountId, transaction.TransactionId)
-		return errs.ErrOperationFailed
-	}
-
 	if transaction.RelatedAccountId > 0 {
-		relatedAccount, exists := accountMap[transaction.RelatedAccountId]
-
-		if !exists {
+		if _, exists := accountMap[transaction.RelatedAccountId]; !exists {
 			log.CliErrorf(c, "[user_data.checkTransactionAccount] the related account \"id:%d\" of transaction \"id:%d\" does not exist", transaction.RelatedAccountId, transaction.TransactionId)
 			return errs.ErrAccountNotFound
-		}
-
-		if relatedAccount.ParentAccountId == models.LevelOneAccountParentId && accountHasChild[relatedAccount.AccountId] {
-			log.CliErrorf(c, "[user_data.checkTransactionAccount] the related account \"id:%d\" of transaction \"id:%d\" is not a sub-account", transaction.RelatedAccountId, transaction.TransactionId)
-			return errs.ErrOperationFailed
 		}
 	}
 

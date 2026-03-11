@@ -5,7 +5,6 @@ import { useI18n } from '@/locales/helpers.ts';
 import { useSettingsStore } from '@/stores/setting.ts';
 import { useUserStore } from '@/stores/user.ts';
 
-import type { TypeAndDisplayName } from '@/core/base.ts';
 import { AccountCategory, AccountType } from '@/core/account.ts';
 import type { LocalizedAccountCategory } from '@/core/account.ts';
 import { Account } from '@/models/account.ts';
@@ -24,7 +23,7 @@ export interface DayAndDisplayName {
 }
 
 export function useAccountEditPageBase() {
-    const { tt, getAllAccountCategories, getAllAccountTypes, getMonthdayShortName } = useI18n();
+    const { tt, getAllAccountCategories, getMonthdayShortName } = useI18n();
 
     const settingsStore = useSettingsStore();
     const userStore = useUserStore();
@@ -36,7 +35,6 @@ export function useAccountEditPageBase() {
     const loading = ref<boolean>(false);
     const submitting = ref<boolean>(false);
     const account = ref<Account>(Account.createNewAccount(defaultAccountCategory, userStore.currentUserDefaultCurrency, getCurrentUnixTimeForNewAccount()));
-    const subAccounts = ref<Account[]>([]);
 
     const title = computed<string>(() => {
         if (!editAccountId.value) {
@@ -54,32 +52,12 @@ export function useAccountEditPageBase() {
         }
     });
 
-    const inputEmptyProblemMessage = computed<string | null>(() => {
-        let problemMessage = getInputEmptyProblemMessage(account.value, false);
-
-        if (problemMessage) {
-            return problemMessage;
-        }
-
-        if (account.value.type === AccountType.MultiSubAccounts.type) {
-            for (const subAccount of subAccounts.value) {
-                problemMessage = getInputEmptyProblemMessage(subAccount, true);
-
-                if (problemMessage) {
-                    return problemMessage;
-                }
-            }
-        }
-
-        return null;
-    });
+    const inputEmptyProblemMessage = computed<string | null>(() => getInputEmptyProblemMessage(account.value));
 
     const inputIsEmpty = computed<boolean>(() => !!inputEmptyProblemMessage.value);
 
     const customAccountCategoryOrder = computed<string>(() => settingsStore.appSettings.accountCategoryOrders);
     const allAccountCategories = computed<LocalizedAccountCategory[]>(() => getAllAccountCategories(customAccountCategoryOrder.value));
-    const allAccountTypes = computed<TypeAndDisplayName[]>(() => getAllAccountTypes());
-
     const allAvailableMonthDays = computed<DayAndDisplayName[]>(() => {
         const allAvailableDays: DayAndDisplayName[] = [];
 
@@ -139,11 +117,9 @@ export function useAccountEditPageBase() {
         account.balanceTime = balanceTime - (newUtcOffset - oldUtcOffset) * 60;
     }
 
-    function getInputEmptyProblemMessage(account: Account, isSubAccount: boolean): string | null {
-        if (!isSubAccount && !account.category) {
+    function getInputEmptyProblemMessage(account: Account): string | null {
+        if (!account.category) {
             return 'Account category cannot be blank';
-        } else if (!isSubAccount && !account.type) {
-            return 'Account type cannot be blank';
         } else if (!account.name) {
             return 'Account name cannot be blank';
         } else if (account.type === AccountType.SingleAccount.type && !account.currency) {
@@ -157,28 +133,8 @@ export function useAccountEditPageBase() {
         return account.id === '' || account.id === '0';
     }
 
-    function addSubAccount(): boolean {
-        if (account.value.type !== AccountType.MultiSubAccounts.type) {
-            return false;
-        }
-
-        const subAccount = account.value.createNewSubAccount(userStore.currentUserDefaultCurrency, getCurrentUnixTimeForNewAccount());
-        subAccounts.value.push(subAccount);
-        return true;
-    }
-
     function setAccount(newAccount: Account): void {
         account.value.fillFrom(newAccount);
-        subAccounts.value = [];
-
-        if (newAccount.subAccounts && newAccount.subAccounts.length > 0) {
-            for (const oldSubAccount of newAccount.subAccounts) {
-                const subAccount: Account = account.value.createNewSubAccount(userStore.currentUserDefaultCurrency, getCurrentUnixTimeForNewAccount());
-                subAccount.fillFrom(oldSubAccount);
-
-                subAccounts.value.push(subAccount);
-            }
-        }
     }
 
     watch(() => account.value.category, (newValue, oldValue) => {
@@ -194,14 +150,12 @@ export function useAccountEditPageBase() {
         loading,
         submitting,
         account,
-        subAccounts,
         // computed states
         title,
         saveButtonTitle,
         inputEmptyProblemMessage,
         inputIsEmpty,
         allAccountCategories,
-        allAccountTypes,
         allAvailableMonthDays,
         isAccountSupportCreditCardStatementDate,
         // functions
@@ -210,7 +164,6 @@ export function useAccountEditPageBase() {
         getAccountCreditCardStatementDate,
         updateAccountBalanceTime,
         isNewAccount,
-        addSubAccount,
         setAccount
     };
 }

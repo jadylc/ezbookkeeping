@@ -2,6 +2,7 @@ import { keys, keysIfValueEquals, values } from '@/core/base.ts';
 import { AccountType, AccountCategory } from '@/core/account.ts';
 import { PARENT_ACCOUNT_CURRENCY_PLACEHOLDER } from '@/consts/currency.ts';
 import { type AccountBalance, type CategorizedAccount, Account } from '@/models/account.ts';
+import { matchSearchText } from '@/lib/search.ts';
 
 export function getCategorizedAccountsMap(allAccounts: Account[]): Record<number, CategorizedAccount> {
     const ret: Record<number, CategorizedAccount> = {};
@@ -59,13 +60,7 @@ export function getAccountMapByName(allAccounts: Account[]): Record<string, Acco
     }
 
     for (const account of allAccounts) {
-        if (account.type === AccountType.SingleAccount.type) {
-            ret[account.name] = account;
-        } else if (account.type === AccountType.MultiSubAccounts.type && account.subAccounts) {
-            for (const subAccount of account.subAccounts) {
-                ret[subAccount.name] = subAccount;
-            }
-        }
+        ret[account.name] = account;
     }
 
     return ret;
@@ -74,7 +69,7 @@ export function getAccountMapByName(allAccounts: Account[]): Record<string, Acco
 export function filterCategorizedAccounts(categorizedAccountsMap: Record<number, CategorizedAccount>, customAccountCategoryOrder: string, allowAccountName?: string, showHidden?: boolean): CategorizedAccount[] {
     const ret: CategorizedAccount[] = [];
     const allCategories = AccountCategory.values(customAccountCategoryOrder);
-    const lowercaseFilterContent = allowAccountName ? allowAccountName.toLowerCase() : '';
+    const filterContent = allowAccountName || '';
 
     for (const accountCategory of allCategories) {
         const categorizedAccount = categorizedAccountsMap[accountCategory.type];
@@ -90,35 +85,13 @@ export function filterCategorizedAccounts(categorizedAccountsMap: Record<number,
                 continue;
             }
 
-            const accountMatchesName = !lowercaseFilterContent || account.name.toLowerCase().includes(lowercaseFilterContent);
-            const filteredSubAccounts: Account[] = [];
+            const accountMatchesName = !filterContent || matchSearchText(account.name, filterContent);
 
-            if (account.subAccounts) {
-                for (const subAccount of account.subAccounts) {
-                    if (!showHidden && subAccount.hidden) {
-                        continue;
-                    }
-
-                    if (!accountMatchesName && lowercaseFilterContent && !subAccount.name.toLowerCase().includes(lowercaseFilterContent)) {
-                        continue;
-                    }
-
-                    const filteredSubAccount = subAccount.clone();
-                    filteredSubAccounts.push(filteredSubAccount);
-                }
-            }
-
-            if (!accountMatchesName && filteredSubAccounts.length < 1) {
+            if (!accountMatchesName) {
                 continue;
             }
 
-            const filteredAccount = account.cloneSelf();
-
-            if (filteredAccount.type === AccountType.MultiSubAccounts.type) {
-                filteredAccount.subAccounts = filteredSubAccounts;
-            }
-
-            allFilteredAccounts.push(filteredAccount);
+            allFilteredAccounts.push(account.cloneSelf());
         }
 
         if (allFilteredAccounts.length > 0) {
@@ -150,27 +123,12 @@ export function getAllFilteredAccountsBalance(categorizedAccounts: Record<number
                 continue;
             }
 
-            if (account.type === AccountType.SingleAccount.type) {
-                ret.push({
-                    balance: account.balance,
-                    isAsset: !!account.isAsset,
-                    isLiability: !!account.isLiability,
-                    currency: account.currency
-                });
-            } else if (account.type === AccountType.MultiSubAccounts.type && account.subAccounts) {
-                for (const subAccount of account.subAccounts) {
-                    if (subAccount.hidden || !accountFilter(subAccount)) {
-                        continue;
-                    }
-
-                    ret.push({
-                        balance: subAccount.balance,
-                        isAsset: !!subAccount.isAsset,
-                        isLiability: !!subAccount.isLiability,
-                        currency: subAccount.currency
-                    });
-                }
-            }
+            ret.push({
+                balance: account.balance,
+                isAsset: !!account.isAsset,
+                isLiability: !!account.isLiability,
+                currency: account.currency
+            });
         }
     }
 
@@ -232,17 +190,7 @@ export function getUnifiedSelectedAccountsCurrencyOrDefaultCurrency(allAccountsM
 }
 
 export function selectAccountOrSubAccounts(filterAccountIds: Record<string, boolean>, account: Account, value: boolean): void {
-    if (account.type === AccountType.SingleAccount.type) {
-        filterAccountIds[account.id] = value;
-    } else if (account.type === AccountType.MultiSubAccounts.type) {
-        if (!account.subAccounts || !account.subAccounts.length) {
-            return;
-        }
-
-        for (const subAccount of account.subAccounts) {
-            filterAccountIds[subAccount.id] = value;
-        }
-    }
+    filterAccountIds[account.id] = value;
 }
 
 export function selectAll(filterAccountIds: Record<string, boolean>, allAccountsMap: Record<string, Account>): void {
@@ -276,31 +224,9 @@ export function selectInvert(filterAccountIds: Record<string, boolean>, allAccou
 }
 
 export function isAccountOrSubAccountsAllChecked(account: Account, filterAccountIds: Record<string, boolean>): boolean {
-    if (!account.subAccounts) {
-        return !filterAccountIds[account.id];
-    }
-
-    for (const subAccount of account.subAccounts) {
-        if (filterAccountIds[subAccount.id]) {
-            return false;
-        }
-    }
-
-    return true;
+    return !filterAccountIds[account.id];
 }
 
-export function isAccountOrSubAccountsHasButNotAllChecked(account: Account, filterAccountIds: Record<string, boolean>): boolean {
-    if (!account.subAccounts) {
-        return false;
-    }
-
-    let checkedCount = 0;
-
-    for (const subAccount of account.subAccounts) {
-        if (!filterAccountIds[subAccount.id]) {
-            checkedCount++;
-        }
-    }
-
-    return checkedCount > 0 && checkedCount < account.subAccounts.length;
+export function isAccountOrSubAccountsHasButNotAllChecked(): boolean {
+    return false;
 }

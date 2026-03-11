@@ -281,11 +281,7 @@ export const useTransactionsStore = defineStore('transactions', () => {
                     }
 
                     if ((transactionsFilter.value.categoryIds && !allFilterCategoryIds.value[currentTransaction.categoryId]) ||
-                        (transactionsFilter.value.accountIds && !allFilterAccountIds.value[currentTransaction.sourceAccountId] && !allFilterAccountIds.value[currentTransaction.destinationAccountId] &&
-                            (!currentTransaction.sourceAccount || !allFilterAccountIds.value[currentTransaction.sourceAccount.parentId]) &&
-                            (!currentTransaction.destinationAccount || !allFilterAccountIds.value[currentTransaction.destinationAccount.parentId])
-                        )
-                    ) {
+                        (transactionsFilter.value.accountIds && !allFilterAccountIds.value[currentTransaction.sourceAccountId] && !allFilterAccountIds.value[currentTransaction.destinationAccountId])) {
                         transactionMonthList.items.splice(transactionIndex, 1);
                     } else {
                         transactionMonthList.items.splice(transactionIndex, 1, currentTransaction);
@@ -368,8 +364,8 @@ export const useTransactionsStore = defineStore('transactions', () => {
             let account = transaction.sourceAccount;
 
             if (totalAccountIdsCount > 0 && transaction.destinationAccount
-                && (!allAccountIdsMap[transaction.sourceAccount?.id || ''] && !allAccountIdsMap[transaction.sourceAccount?.parentId || ''])
-                && (allAccountIdsMap[transaction.destinationAccount.id] || allAccountIdsMap[transaction.destinationAccount.parentId])) {
+                && !allAccountIdsMap[transaction.sourceAccount?.id || '']
+                && allAccountIdsMap[transaction.destinationAccount.id]) {
                 amount = transaction.destinationAmount;
                 account = transaction.destinationAccount;
             }
@@ -405,16 +401,10 @@ export const useTransactionsStore = defineStore('transactions', () => {
             } else if (transaction.type === TransactionType.Transfer && totalAccountIdsCount > 0) {
                 if (allAccountIdsMap[transaction.sourceAccountId] && allAccountIdsMap[transaction.destinationAccountId]) {
                     // Do Nothing
-                } else if (transaction.sourceAccount && transaction.destinationAccount && allAccountIdsMap[transaction.sourceAccount.parentId] && allAccountIdsMap[transaction.destinationAccount.parentId]) {
-                    // Do Nothing
-                } else if (transaction.sourceAccount && allAccountIdsMap[transaction.sourceAccount.parentId] && allAccountIdsMap[transaction.destinationAccountId]) {
-                    // Do Nothing
-                } else if (transaction.destinationAccount && allAccountIdsMap[transaction.sourceAccountId] && allAccountIdsMap[transaction.destinationAccount.parentId]) {
-                    // Do Nothing
-                } else if (allAccountIdsMap[transaction.sourceAccountId] || (transaction.sourceAccount && allAccountIdsMap[transaction.sourceAccount.parentId])) {
+                } else if (allAccountIdsMap[transaction.sourceAccountId]) {
                     totalExpense += amount;
                     dailyTotalAmount.expense += amount;
-                } else if (allAccountIdsMap[transaction.destinationAccountId] || (transaction.destinationAccount && allAccountIdsMap[transaction.destinationAccount.parentId])) {
+                } else if (allAccountIdsMap[transaction.destinationAccountId]) {
                     totalIncome += amount;
                     dailyTotalAmount.income += amount;
                 }

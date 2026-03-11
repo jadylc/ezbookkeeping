@@ -14,8 +14,8 @@
         <f7-list strong inset dividers>
             <f7-list-item :title="tt('Version')" :after="clientVersion" @click="showVersion"></f7-list-item>
             <f7-list-item :title="tt('Build Time')" :after="clientBuildTime" v-if="clientBuildTime"></f7-list-item>
-            <f7-list-item :title="tt('Official Website')" link="#" @click="openExternalUrl('https://github.com/mayswind/ezbookkeeping')"></f7-list-item>
-            <f7-list-item :title="tt('Report Issue')" link="#" @click="openExternalUrl('https://github.com/mayswind/ezbookkeeping/issues')"></f7-list-item>
+            <f7-list-item :title="tt('Official Website')" link="#" @click="openExternalUrl('https://github.com/mayswind/ezfinance')"></f7-list-item>
+            <f7-list-item :title="tt('Report Issue')" link="#" @click="openExternalUrl('https://github.com/mayswind/ezfinance/issues')"></f7-list-item>
             <f7-list-item :title="tt('Getting help')" link="#" popup-open=".document-popup"></f7-list-item>
             <f7-list-item :title="tt('License')" link="#" popup-open=".license-popup"></f7-list-item>
         </f7-list>
@@ -49,7 +49,7 @@
                     </p>
                     <hr/>
                     <p>
-                        <span>ezBookkeeping's codebase and localization translation rely on contributions from the community. The following people have contributed to ezBookkeeping:</span>
+                        <span>ezfinance's codebase and localization translation rely on contributions from the community. The following people have contributed to ezfinance:</span>
                     </p>
                     <div>
                         <strong>Project Maintainer</strong>
@@ -105,7 +105,7 @@
                         </tbody>
                     </table>
                     <p class="margin-top margin-bottom">
-                        <span>ezBookkeeping also contains additional third party software and illustration.</span><br/>
+                        <span>ezfinance also contains additional third party software and illustration.</span><br/>
                         <span>All the third party software / illustration included or linked is redistributed under the terms and conditions of their original licenses.</span>
                     </p>
                     <p :key="licenseInfo.name" v-for="licenseInfo in thirdPartyLicenses">
@@ -183,9 +183,9 @@ const forceShowRefreshBrowserCacheMenu = computed<boolean>(() => versionClickCou
 
 const documentUrl = computed<string>(() => {
     if (getCurrentLanguageTag() === 'zh-Hans' || getCurrentLanguageTag() === 'zh-Hant') {
-        return 'https://ezbookkeeping.mayswind.net/zh_Hans/faq/';
+        return 'https://ezfinance.mayswind.net/zh_Hans/faq/';
     } else {
-        return 'https://ezbookkeeping.mayswind.net/faq/';
+        return 'https://ezfinance.mayswind.net/faq/';
     }
 });
 
@@ -267,3 +267,4 @@ init();
     }
 }
 </style>
+

@@ -4,6 +4,7 @@ import { defineStore } from 'pinia';
 import { useSettingsStore } from './setting.ts';
 import { useUserStore } from './user.ts';
 import { useAccountsStore } from './account.ts';
+import { useAccountTagsStore } from './accountTag.ts';
 import { useTransactionCategoriesStore } from './transactionCategory.ts';
 import { useExchangeRatesStore } from './exchangeRates.ts';
 
@@ -52,6 +53,7 @@ import {
     type TransactionAssetTrendsAnalysisDataAmount,
     TransactionCategoricalOverviewAnalysisDataItemType
 } from '@/models/transaction.ts';
+import type { Account } from '@/models/account.ts';
 
 import {
     isEquals,
@@ -118,6 +120,20 @@ interface WritableTransactionAssetTrendsAnalysisDataItem extends Record<string, 
     items: TransactionAssetTrendsAnalysisDataAmount[];
 }
 
+type Mutable<T> = { -readonly [P in keyof T]: T[P] };
+
+type WritableTransactionCategoricalOverviewAnalysisDataItem = Mutable<TransactionCategoricalOverviewAnalysisDataItem>;
+
+interface StatisticsAccountMeta {
+    key: string;
+    id: string;
+    name: string;
+    icon: string;
+    color: string;
+    hidden: boolean;
+    displayOrders: number[];
+}
+
 export interface TransactionStatisticsPartialFilter {
     chartDataType?: number;
     categoricalChartType?: number;
@@ -133,6 +149,7 @@ export interface TransactionStatisticsPartialFilter {
     assetTrendsChartStartTime?: number;
     assetTrendsChartEndTime?: number;
     filterAccountIds?: Record<string, boolean>;
+    filterAccountTagIds?: Record<string, boolean>;
     filterCategoryIds?: Record<string, boolean>;
     tagFilter?: string;
     keyword?: string;
@@ -154,6 +171,7 @@ export interface TransactionStatisticsFilter extends TransactionStatisticsPartia
     assetTrendsChartStartTime: number;
     assetTrendsChartEndTime: number;
     filterAccountIds: Record<string, boolean>;
+    filterAccountTagIds: Record<string, boolean>;
     filterCategoryIds: Record<string, boolean>;
     tagFilter: string;
     keyword: string;
@@ -164,6 +182,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
     const settingsStore = useSettingsStore();
     const userStore = useUserStore();
     const accountsStore = useAccountsStore();
+    const accountTagsStore = useAccountTagsStore();
     const transactionCategoriesStore = useTransactionCategoriesStore();
     const exchangeRatesStore = useExchangeRatesStore();
 
@@ -182,6 +201,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
         assetTrendsChartStartTime: 0,
         assetTrendsChartEndTime: 0,
         filterAccountIds: {},
+        filterAccountTagIds: {},
         filterCategoryIds: {},
         tagFilter: '',
         keyword: '',
@@ -244,15 +264,15 @@ export const useStatisticsStore = defineStore('statistics', () => {
             return null;
         }
 
-        const allDataItemsMap: Record<string, TransactionCategoricalOverviewAnalysisDataItem> = {};
-        const allIncomeByPrimaryCategoryDataItems: TransactionCategoricalOverviewAnalysisDataItem[] = [];
-        const allIncomeBySecondaryCategoryDataItems: TransactionCategoricalOverviewAnalysisDataItem[] = [];
-        const allIncomeByAccountDataItems: TransactionCategoricalOverviewAnalysisDataItem[] = [];
-        const allExpenseByAccountDataItems: TransactionCategoricalOverviewAnalysisDataItem[] = [];
-        const allExpenseBySecondaryCategoryDataItems: TransactionCategoricalOverviewAnalysisDataItem[] = [];
-        const allExpenseByPrimaryCategoryDataItems: TransactionCategoricalOverviewAnalysisDataItem[] = [];
-        const allOpeningBalanceDataItems: TransactionCategoricalOverviewAnalysisDataItem[] = [];
-        const allNetCashFlowDataItems: TransactionCategoricalOverviewAnalysisDataItem[] = [];
+        const allDataItemsMap: Record<string, WritableTransactionCategoricalOverviewAnalysisDataItem> = {};
+        const allIncomeByPrimaryCategoryDataItems: WritableTransactionCategoricalOverviewAnalysisDataItem[] = [];
+        const allIncomeBySecondaryCategoryDataItems: WritableTransactionCategoricalOverviewAnalysisDataItem[] = [];
+        const allIncomeByAccountDataItems: WritableTransactionCategoricalOverviewAnalysisDataItem[] = [];
+        const allExpenseByAccountDataItems: WritableTransactionCategoricalOverviewAnalysisDataItem[] = [];
+        const allExpenseBySecondaryCategoryDataItems: WritableTransactionCategoricalOverviewAnalysisDataItem[] = [];
+        const allExpenseByPrimaryCategoryDataItems: WritableTransactionCategoricalOverviewAnalysisDataItem[] = [];
+        const allOpeningBalanceDataItems: WritableTransactionCategoricalOverviewAnalysisDataItem[] = [];
+        const allNetCashFlowDataItems: WritableTransactionCategoricalOverviewAnalysisDataItem[] = [];
 
         let totalIncome: number = 0;
         let totalExpense: number = 0;
@@ -284,40 +304,44 @@ export const useStatisticsStore = defineStore('statistics', () => {
                 totalExpense += item.amountInDefaultCurrency;
             }
 
-            const primaryAccountCategoryDisplayOrder = settingsStore.accountCategoryDisplayOrders[item.primaryAccount.category] || Number.MAX_SAFE_INTEGER;
-            const incomeByAccountKey = `${TransactionCategoricalOverviewAnalysisDataItemType.IncomeByAccount}:${item.account.id}`;
-            const expenseByAccountKey = `${TransactionCategoricalOverviewAnalysisDataItemType.ExpenseByAccount}:${item.account.id}`;
-            let incomeByAccountItem: TransactionCategoricalOverviewAnalysisDataItem | undefined = allDataItemsMap[incomeByAccountKey];
-            let expenseByAccountItem: TransactionCategoricalOverviewAnalysisDataItem | undefined = allDataItemsMap[expenseByAccountKey];
+            const accountMeta = getStatisticsAccountMeta(item.account, item.primaryAccount);
+            const incomeByAccountKey = `${TransactionCategoricalOverviewAnalysisDataItemType.IncomeByAccount}:${accountMeta.key}`;
+            const expenseByAccountKey = `${TransactionCategoricalOverviewAnalysisDataItemType.ExpenseByAccount}:${accountMeta.key}`;
+            let incomeByAccountItem: WritableTransactionCategoricalOverviewAnalysisDataItem | undefined = allDataItemsMap[incomeByAccountKey];
+            let expenseByAccountItem: WritableTransactionCategoricalOverviewAnalysisDataItem | undefined = allDataItemsMap[expenseByAccountKey];
 
             if (!incomeByAccountItem) {
                 incomeByAccountItem = createNewTransactionCategoricalOverviewAnalysisDataItem(
-                    item.account.id,
-                    item.account.name,
+                    accountMeta.id,
+                    accountMeta.name,
                     TransactionCategoricalOverviewAnalysisDataItemType.IncomeByAccount,
-                    [primaryAccountCategoryDisplayOrder, item.primaryAccount.displayOrder, item.account.displayOrder],
-                    item.primaryAccount.hidden || item.account.hidden);
+                    accountMeta.displayOrders,
+                    accountMeta.hidden);
                 allDataItemsMap[incomeByAccountKey] = incomeByAccountItem;
                 allIncomeByAccountDataItems.push(incomeByAccountItem);
+            } else if (!incomeByAccountItem.id.split(',').includes(item.account.id)) {
+                incomeByAccountItem.id = `${incomeByAccountItem.id},${item.account.id}`;
             }
 
             if (!expenseByAccountItem) {
                 expenseByAccountItem = createNewTransactionCategoricalOverviewAnalysisDataItem(
-                    item.account.id,
-                    item.account.name,
+                    accountMeta.id,
+                    accountMeta.name,
                     TransactionCategoricalOverviewAnalysisDataItemType.ExpenseByAccount,
-                    [primaryAccountCategoryDisplayOrder, item.primaryAccount.displayOrder, item.account.displayOrder],
-                    item.primaryAccount.hidden || item.account.hidden);
+                    accountMeta.displayOrders,
+                    accountMeta.hidden);
                 allDataItemsMap[expenseByAccountKey] = expenseByAccountItem;
                 allExpenseByAccountDataItems.push(expenseByAccountItem);
+            } else if (!expenseByAccountItem.id.split(',').includes(item.account.id)) {
+                expenseByAccountItem.id = `${expenseByAccountItem.id},${item.account.id}`;
             }
 
             if (item.category.type === CategoryType.Income) {
                 const primaryCategoryItemKey = `${TransactionCategoricalOverviewAnalysisDataItemType.IncomeByPrimaryCategory}:${item.primaryCategory.id}`;
                 const secondaryCategoryItemKey = `${TransactionCategoricalOverviewAnalysisDataItemType.IncomeBySecondaryCategory}:${item.category.id}`;
 
-                let primaryCategoryDataItem: TransactionCategoricalOverviewAnalysisDataItem | undefined = allDataItemsMap[primaryCategoryItemKey];
-                let secondaryCategoryDataItem: TransactionCategoricalOverviewAnalysisDataItem | undefined = allDataItemsMap[secondaryCategoryItemKey];
+                let primaryCategoryDataItem: WritableTransactionCategoricalOverviewAnalysisDataItem | undefined = allDataItemsMap[primaryCategoryItemKey];
+                let secondaryCategoryDataItem: WritableTransactionCategoricalOverviewAnalysisDataItem | undefined = allDataItemsMap[secondaryCategoryItemKey];
 
                 if (!primaryCategoryDataItem) {
                     primaryCategoryDataItem = createNewTransactionCategoricalOverviewAnalysisDataItem(
@@ -360,8 +384,8 @@ export const useStatisticsStore = defineStore('statistics', () => {
                 const primaryCategoryItemKey = `${TransactionCategoricalOverviewAnalysisDataItemType.ExpenseByPrimaryCategory}:${item.primaryCategory.id}`;
                 const secondaryCategoryItemKey = `${TransactionCategoricalOverviewAnalysisDataItemType.ExpenseBySecondaryCategory}:${item.category.id}`;
 
-                let primaryCategoryDataItem: TransactionCategoricalOverviewAnalysisDataItem | undefined = allDataItemsMap[primaryCategoryItemKey];
-                let secondaryCategoryDataItem: TransactionCategoricalOverviewAnalysisDataItem | undefined = allDataItemsMap[secondaryCategoryItemKey];
+                let primaryCategoryDataItem: WritableTransactionCategoricalOverviewAnalysisDataItem | undefined = allDataItemsMap[primaryCategoryItemKey];
+                let secondaryCategoryDataItem: WritableTransactionCategoricalOverviewAnalysisDataItem | undefined = allDataItemsMap[secondaryCategoryItemKey];
 
                 if (!primaryCategoryDataItem) {
                     primaryCategoryDataItem = createNewTransactionCategoricalOverviewAnalysisDataItem(
@@ -402,7 +426,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
                 primaryCategoryDataItem.inflows.push({ amount: item.amountInDefaultCurrency, relatedItem: secondaryCategoryDataItem });
             } else if (item.category.type === CategoryType.Transfer && item.relatedPrimaryAccount && item.relatedAccount) {
                 const transferToAccountKey = `${TransactionCategoricalOverviewAnalysisDataItemType.ExpenseByAccount}:${item.relatedAccount.id}`;
-                let transferToAccountItem: TransactionCategoricalOverviewAnalysisDataItem | undefined = allDataItemsMap[transferToAccountKey];
+                let transferToAccountItem: WritableTransactionCategoricalOverviewAnalysisDataItem | undefined = allDataItemsMap[transferToAccountKey];
 
                 if (!transferToAccountItem) {
                     const relatedPrimaryAccountCategoryDisplayOrder = settingsStore.accountCategoryDisplayOrders[item.relatedPrimaryAccount.category] || Number.MAX_SAFE_INTEGER;
@@ -430,7 +454,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
         for (const item of allExpenseByAccountDataItems) {
             const incomeByAccountKey = `${TransactionCategoricalOverviewAnalysisDataItemType.IncomeByAccount}:${item.id}`;
-            const incomeByAccountItem: TransactionCategoricalOverviewAnalysisDataItem | undefined = allDataItemsMap[incomeByAccountKey];
+            const incomeByAccountItem: WritableTransactionCategoricalOverviewAnalysisDataItem | undefined = allDataItemsMap[incomeByAccountKey];
 
             let accountTotalInflowsAmount: number = 0;
             let accountTotalIncomeAmount: number = 0;
@@ -476,7 +500,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
             }
 
             if (accountNetCashFlow > 0) {
-                let netCashFlowItem: TransactionCategoricalOverviewAnalysisDataItem | undefined = allDataItemsMap[TransactionCategoricalOverviewAnalysisDataItemType.NetCashFlow];
+                let netCashFlowItem: WritableTransactionCategoricalOverviewAnalysisDataItem | undefined = allDataItemsMap[TransactionCategoricalOverviewAnalysisDataItemType.NetCashFlow];
 
                 if (!netCashFlowItem) {
                     netCashFlowItem = createNewTransactionCategoricalOverviewAnalysisDataItem(
@@ -497,7 +521,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
             }
         }
 
-        const allDataItems: TransactionCategoricalOverviewAnalysisDataItem[] = [
+        const allDataItems: WritableTransactionCategoricalOverviewAnalysisDataItem[] = [
             ...allIncomeByPrimaryCategoryDataItems,
             ...allIncomeBySecondaryCategoryDataItems,
             ...allIncomeByAccountDataItems,
@@ -539,13 +563,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
                 continue;
             }
 
-            let primaryAccount = accountsStore.allAccountsMap[account.parentId];
-
-            if (!primaryAccount) {
-                primaryAccount = account;
-            }
-
-            const primaryAccountCategoryDisplayOrder = settingsStore.accountCategoryDisplayOrders[primaryAccount.category] || Number.MAX_SAFE_INTEGER;
+            const primaryAccountCategoryDisplayOrder = settingsStore.accountCategoryDisplayOrders[account.category] || Number.MAX_SAFE_INTEGER;
 
             let amount = account.balance;
 
@@ -569,8 +587,8 @@ export const useStatisticsStore = defineStore('statistics', () => {
                 id: account.id,
                 icon: account.icon || DEFAULT_ACCOUNT_ICON.icon,
                 color: account.color || DEFAULT_ACCOUNT_COLOR,
-                hidden: primaryAccount.hidden || account.hidden,
-                displayOrders: [primaryAccountCategoryDisplayOrder, primaryAccount.displayOrder, account.displayOrder],
+                hidden: account.hidden,
+                displayOrders: [primaryAccountCategoryDisplayOrder, account.displayOrder, 0],
                 totalAmount: amount
             };
 
@@ -861,6 +879,30 @@ export const useStatisticsStore = defineStore('statistics', () => {
                     continue;
                 }
 
+                if (transactionStatisticsFilter.value.filterAccountTagIds) {
+                    const accountTagNames = item.account.tags && item.account.tags.length ? item.account.tags : (item.account.tag ? [item.account.tag] : []);
+                    let excludedByTag = false;
+
+                    for (const rawTagName of accountTagNames) {
+                        const tagName = rawTagName?.trim();
+
+                        if (!tagName) {
+                            continue;
+                        }
+
+                        const accountTag = accountTagsStore.allAccountTagsNameMap[tagName];
+
+                        if (accountTag && transactionStatisticsFilter.value.filterAccountTagIds[accountTag.id]) {
+                            excludedByTag = true;
+                            break;
+                        }
+                    }
+
+                    if (excludedByTag) {
+                        continue;
+                    }
+                }
+
                 if (!isNumber(item.amountInDefaultCurrency)) {
                     continue;
                 }
@@ -887,21 +929,24 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
                 if (transactionStatisticsFilter.value.chartDataType === ChartDataType.AccountTotalAssets.type ||
                     transactionStatisticsFilter.value.chartDataType === ChartDataType.AccountTotalLiabilities.type) {
-                    let data = combinedDataMap[item.account.id];
+                    const accountMeta = getStatisticsAccountMeta(item.account, item.primaryAccount);
+                    let data = combinedDataMap[accountMeta.key];
 
                     if (data) {
                         data.totalAmount += amount;
-                    } else {
-                        const primaryAccountCategoryDisplayOrder = settingsStore.accountCategoryDisplayOrders[item.primaryAccount.category] || Number.MAX_SAFE_INTEGER;
 
+                        if (!data.id.split(',').includes(item.account.id)) {
+                            data.id = `${data.id},${item.account.id}`;
+                        }
+                    } else {
                         data = {
-                            name: item.account.name,
+                            name: accountMeta.name,
                             type: 'account',
-                            id: item.account.id,
-                            icon: item.account.icon || DEFAULT_ACCOUNT_ICON.icon,
-                            color: item.account.color || DEFAULT_ACCOUNT_COLOR,
-                            hidden: item.primaryAccount.hidden || item.account.hidden,
-                            displayOrders: [primaryAccountCategoryDisplayOrder, item.primaryAccount.displayOrder, item.account.displayOrder],
+                            id: accountMeta.id,
+                            icon: accountMeta.icon,
+                            color: accountMeta.color,
+                            hidden: accountMeta.hidden,
+                            displayOrders: accountMeta.displayOrders,
                             totalAmount: amount,
                             items: []
                         };
@@ -914,7 +959,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
                         totalAmount: amount
                     };
                     data.items.push(amountItem);
-                    combinedDataMap[item.account.id] = data;
+                    combinedDataMap[accountMeta.key] = data;
                 }
 
                 if (item.account.isAsset) {
@@ -969,8 +1014,8 @@ export const useStatisticsStore = defineStore('statistics', () => {
         return assetTrendsData;
     });
 
-    function createNewTransactionCategoricalOverviewAnalysisDataItem(id: string, name: string, type: TransactionCategoricalOverviewAnalysisDataItemType, displayOrders: number[], hidden: boolean): TransactionCategoricalOverviewAnalysisDataItem {
-        const dataItem: TransactionCategoricalOverviewAnalysisDataItem = {
+    function createNewTransactionCategoricalOverviewAnalysisDataItem(id: string, name: string, type: TransactionCategoricalOverviewAnalysisDataItemType, displayOrders: number[], hidden: boolean): WritableTransactionCategoricalOverviewAnalysisDataItem {
+        const dataItem: WritableTransactionCategoricalOverviewAnalysisDataItem = {
             id: id,
             name: name,
             type: type,
@@ -1005,6 +1050,33 @@ export const useStatisticsStore = defineStore('statistics', () => {
         sortStatisticsItems(items, transactionStatisticsFilter.sortingType);
     }
 
+    function getStatisticsAccountMeta(account: Account, primaryAccount: Account): StatisticsAccountMeta {
+        const primaryAccountCategoryDisplayOrder = settingsStore.accountCategoryDisplayOrders[primaryAccount.category] || Number.MAX_SAFE_INTEGER;
+        const accountTag = account.tags && account.tags.length ? account.tags[0]?.trim() : account.tag?.trim();
+
+        if (accountTag) {
+            return {
+                key: `tag:${accountTag}`,
+                id: account.id,
+                name: accountTag,
+                icon: primaryAccount.icon || account.icon || DEFAULT_ACCOUNT_ICON.icon,
+                color: primaryAccount.color || account.color || DEFAULT_ACCOUNT_COLOR,
+                hidden: primaryAccount.hidden || account.hidden,
+                displayOrders: [primaryAccountCategoryDisplayOrder, primaryAccount.displayOrder, 0]
+            };
+        }
+
+        return {
+            key: account.id,
+            id: account.id,
+            name: account.name,
+            icon: account.icon || DEFAULT_ACCOUNT_ICON.icon,
+            color: account.color || DEFAULT_ACCOUNT_COLOR,
+            hidden: primaryAccount.hidden || account.hidden,
+            displayOrders: [primaryAccountCategoryDisplayOrder, primaryAccount.displayOrder, account.displayOrder]
+        };
+    }
+
     function assembleAccountAndCategoryInfo(items: TransactionStatisticResponseItem[]): TransactionStatisticResponseItemWithInfo[] {
         const finalItems: TransactionStatisticResponseItemWithInfo[] = [];
         const defaultCurrency = userStore.currentUserDefaultCurrency;
@@ -1023,21 +1095,13 @@ export const useStatisticsStore = defineStore('statistics', () => {
                 item.account = accountsStore.allAccountsMap[item.accountId];
             }
 
-            if (item.account && item.account.parentId !== '0') {
-                item.primaryAccount = accountsStore.allAccountsMap[item.account.parentId];
-            } else {
-                item.primaryAccount = item.account;
-            }
+            item.primaryAccount = item.account;
 
             if (item.relatedAccountId) {
                 item.relatedAccount = accountsStore.allAccountsMap[item.relatedAccountId];
             }
 
-            if (item.relatedAccount && item.relatedAccount.parentId !== '0') {
-                item.relatedPrimaryAccount = accountsStore.allAccountsMap[item.relatedAccount.parentId];
-            } else {
-                item.relatedPrimaryAccount = item.relatedAccount;
-            }
+            item.relatedPrimaryAccount = item.relatedAccount;
 
             if (item.categoryId) {
                 item.category = transactionCategoriesStore.allTransactionCategoriesMap[item.categoryId];
@@ -1132,21 +1196,24 @@ export const useStatisticsStore = defineStore('statistics', () => {
                 transactionStatisticsFilter.chartDataType === ChartDataType.InflowsByAccount.type ||
                 transactionStatisticsFilter.chartDataType === ChartDataType.IncomeByAccount.type) {
                 if (isNumber(item.amountInDefaultCurrency)) {
-                    let data = allDataItems[item.account.id];
+                    const accountMeta = getStatisticsAccountMeta(item.account, item.primaryAccount);
+                    let data = allDataItems[accountMeta.key];
 
                     if (data) {
                         data.totalAmount += item.amountInDefaultCurrency;
-                    } else {
-                        const primaryAccountCategoryDisplayOrder = settingsStore.accountCategoryDisplayOrders[item.primaryAccount.category] || Number.MAX_SAFE_INTEGER;
 
+                        if (!data.id.split(',').includes(item.account.id)) {
+                            data.id = `${data.id},${item.account.id}`;
+                        }
+                    } else {
                         data = {
-                            name: item.account.name,
+                            name: accountMeta.name,
                             type: 'account',
-                            id: item.account.id,
-                            icon: item.account.icon || DEFAULT_ACCOUNT_ICON.icon,
-                            color: item.account.color || DEFAULT_ACCOUNT_COLOR,
-                            hidden: item.primaryAccount.hidden || item.account.hidden,
-                            displayOrders: [primaryAccountCategoryDisplayOrder, item.primaryAccount.displayOrder, item.account.displayOrder],
+                            id: accountMeta.id,
+                            icon: accountMeta.icon,
+                            color: accountMeta.color,
+                            hidden: accountMeta.hidden,
+                            displayOrders: accountMeta.displayOrders,
                             totalAmount: item.amountInDefaultCurrency
                         };
                     }
@@ -1169,7 +1236,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
                         }
                     }
 
-                    allDataItems[item.account.id] = data;
+                    allDataItems[accountMeta.key] = data;
                 }
             } else if (transactionStatisticsFilter.chartDataType === ChartDataType.ExpenseByPrimaryCategory.type ||
                 transactionStatisticsFilter.chartDataType === ChartDataType.IncomeByPrimaryCategory.type) {
@@ -1329,6 +1396,7 @@ export const useStatisticsStore = defineStore('statistics', () => {
         transactionStatisticsFilter.value.assetTrendsChartStartTime = 0;
         transactionStatisticsFilter.value.assetTrendsChartEndTime = 0;
         transactionStatisticsFilter.value.filterAccountIds = {};
+        transactionStatisticsFilter.value.filterAccountTagIds = {};
         transactionStatisticsFilter.value.filterCategoryIds = {};
         transactionStatisticsFilter.value.tagFilter = '';
         transactionStatisticsFilter.value.keyword = '';
@@ -1340,6 +1408,8 @@ export const useStatisticsStore = defineStore('statistics', () => {
     function initTransactionStatisticsFilter(analysisType: StatisticsAnalysisType, filter?: TransactionStatisticsPartialFilter): void {
         if (filter && isInteger(filter.chartDataType)) {
             transactionStatisticsFilter.value.chartDataType = filter.chartDataType;
+        } else if (analysisType === StatisticsAnalysisType.AssetTrends) {
+            transactionStatisticsFilter.value.chartDataType = ChartDataType.DefaultForAssetTrends.type;
         } else {
             transactionStatisticsFilter.value.chartDataType = settingsStore.appSettings.statistics.defaultChartDataType;
         }
@@ -1499,6 +1569,12 @@ export const useStatisticsStore = defineStore('statistics', () => {
             transactionStatisticsFilter.value.filterAccountIds = settingsStore.appSettings.statistics.defaultAccountFilter || {};
         }
 
+        if (filter && isObject(filter.filterAccountTagIds)) {
+            transactionStatisticsFilter.value.filterAccountTagIds = filter.filterAccountTagIds;
+        } else {
+            transactionStatisticsFilter.value.filterAccountTagIds = {};
+        }
+
         if (filter && isObject(filter.filterCategoryIds)) {
             transactionStatisticsFilter.value.filterCategoryIds = filter.filterCategoryIds;
         } else {
@@ -1605,6 +1681,11 @@ export const useStatisticsStore = defineStore('statistics', () => {
             changed = true;
         }
 
+        if (filter && isObject(filter.filterAccountTagIds) && !isEquals(transactionStatisticsFilter.value.filterAccountTagIds, filter.filterAccountTagIds)) {
+            transactionStatisticsFilter.value.filterAccountTagIds = filter.filterAccountTagIds;
+            changed = true;
+        }
+
         if (filter && isObject(filter.filterCategoryIds) && !isEquals(transactionStatisticsFilter.value.filterCategoryIds, filter.filterCategoryIds)) {
             transactionStatisticsFilter.value.filterCategoryIds = filter.filterCategoryIds;
             changed = true;
@@ -1673,6 +1754,14 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
             if (ids && ids.length) {
                 querys.push('filterAccountIds=' + ids.join(','));
+            }
+        }
+
+        if (transactionStatisticsFilter.value.filterAccountTagIds) {
+            const ids = objectFieldToArrayItem(transactionStatisticsFilter.value.filterAccountTagIds);
+
+            if (ids && ids.length) {
+                querys.push('filterAccountTagIds=' + ids.join(','));
             }
         }
 

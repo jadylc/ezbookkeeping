@@ -14,6 +14,7 @@
         :label="showLabel ? tt('Tags') : undefined"
         :placeholder="tt('None')"
         :items="allTagsWithGroupHeader"
+        :custom-filter="filterTag"
         :model-value="modelValue"
         v-model:search="tagSearchContent"
         @update:modelValue="updateModelValue"
@@ -71,6 +72,7 @@ import { type CommonTransactionTagSelectionProps, useTransactionTagSelectionBase
 import { useTransactionTagsStore } from '@/stores/transactionTag.ts';
 
 import { TransactionTag } from '@/models/transaction_tag.ts';
+import { matchSearchText } from '@/lib/search.ts';
 
 import type { ComponentDensity, InputVariant } from '@/lib/ui/desktop.ts';
 
@@ -130,5 +132,21 @@ function saveNewTag(tagName: string): void {
 
 function updateModelValue(newValue: string[]) {
     emit('update:modelValue', newValue);
+}
+
+function filterTag(value: string, query: string, item?: { value: unknown; raw: unknown }): boolean {
+    if (!item) {
+        return false;
+    }
+
+    if (!query) {
+        return true;
+    }
+
+    if (item.raw instanceof TransactionTag) {
+        return matchSearchText(item.raw.name, query);
+    }
+
+    return true;
 }
 </script>

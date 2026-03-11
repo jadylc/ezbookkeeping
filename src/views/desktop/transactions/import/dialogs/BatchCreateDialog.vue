@@ -319,7 +319,6 @@ function confirm(): void {
 
             return accountsStore.saveAccount({
                 account,
-                subAccounts: [],
                 isEdit: false,
                 clientSessionId: ''
             });

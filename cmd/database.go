@@ -85,6 +85,14 @@ func updateAllDatabaseTablesStructure(c *core.CliContext) error {
 
 	log.BootInfof(c, "[database.updateAllDatabaseTablesStructure] account table maintained successfully")
 
+	err = datastore.Container.UserDataStore.SyncStructs(new(models.AccountTag))
+
+	if err != nil {
+		return err
+	}
+
+	log.BootInfof(c, "[database.updateAllDatabaseTablesStructure] account tag table maintained successfully")
+
 	err = datastore.Container.UserDataStore.SyncStructs(new(models.Transaction))
 
 	if err != nil {

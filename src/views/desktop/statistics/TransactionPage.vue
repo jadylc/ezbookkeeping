@@ -47,6 +47,41 @@
                                 v-model="querySortingType"
                             />
                         </div>
+                        <div class="mx-6 mt-4" v-if="queryAnalysisType === StatisticsAnalysisType.AssetTrends">
+                            <span class="text-subtitle-2">{{ tt('Display Currency') }}</span>
+                            <v-autocomplete
+                                item-title="displayName"
+                                item-value="currencyCode"
+                                auto-select-first
+                                persistent-placeholder
+                                class="mt-2"
+                                :disabled="loading"
+                                :placeholder="tt('Display Currency')"
+                                :items="assetTrendsCurrencyOptions"
+                                :no-data-text="tt('No results')"
+                                :custom-filter="filterCurrency"
+                                v-model="assetTrendsDisplayCurrency"
+                            >
+                                <template #append-inner>
+                                    <small class="text-field-append-text smaller">{{ assetTrendsDisplayCurrencyValue }}</small>
+                                </template>
+
+                                <template #item="{ props, item }">
+                                    <v-list-item :value="item.value" v-bind="props">
+                                        <template #title>
+                                            <v-list-item-title>
+                                                <div class="d-flex align-center">
+                                                    <span>{{ item.title }}</span>
+                                                    <v-spacer style="min-width: 40px" />
+                                                    <v-icon :icon="mdiCheck" v-if="assetTrendsDisplayCurrencyValue === item.raw.currencyCode" />
+                                                    <small class="text-field-append-text" v-if="assetTrendsDisplayCurrencyValue !== item.raw.currencyCode">{{ item.raw.currencyCode }}</small>
+                                                </div>
+                                            </v-list-item-title>
+                                        </template>
+                                    </v-list-item>
+                                </template>
+                            </v-autocomplete>
+                        </div>
                         <v-tabs show-arrows class="my-4" direction="vertical"
                                 :disabled="loading" v-model="queryChartDataType">
                             <v-tab class="tab-text-truncate" :key="dataType.type" :value="dataType.type"
@@ -153,38 +188,35 @@
                                                               @keyup.enter="setKeywordFilter(filterKeyword)"
                                                 />
                                             </div>
-                                            <v-btn density="comfortable" color="default" variant="text" class="ms-2"
-                                                   :disabled="loading" :icon="true">
-                                                <v-icon :icon="mdiDotsVertical" />
-                                                <v-menu activator="parent">
-                                                    <v-list>
-                                                        <v-list-item :disabled="loading"
-                                                                     :prepend-icon="mdiFilterOutline"
-                                                                     :title="tt('Filter Accounts')"
-                                                                     @click="showFilterAccountDialog = true"></v-list-item>
-                                                        <v-list-item :disabled="loading"
-                                                                     :prepend-icon="mdiFilterOutline"
-                                                                     :title="tt('Filter Transaction Categories')"
-                                                                     @click="showFilterCategoryDialog = true"
-                                                                     v-if="canUseCategoryFilter"></v-list-item>
-                                                        <v-list-item :disabled="loading"
-                                                                     :prepend-icon="mdiFilterOutline"
-                                                                     :title="tt('Filter Transaction Tags')"
-                                                                     @click="showFilterTagDialog = true"
-                                                                     v-if="canUseTagFilter"></v-list-item>
-                                                        <v-divider class="my-2" v-if="!isQuerySpecialChartType" />
-                                                        <v-list-item :prepend-icon="mdiExport"
-                                                                     :title="tt('Export Results')"
-                                                                     :disabled="!statisticsDataHasData"
-                                                                     @click="exportResults"
-                                                                     v-if="!isQuerySpecialChartType"></v-list-item>
-                                                        <v-divider class="my-2"/>
-                                                        <v-list-item to="/app/settings?tab=statisticsSetting"
-                                                                     :prepend-icon="mdiFilterCogOutline"
-                                                                     :title="tt('Settings')"></v-list-item>
-                                                    </v-list>
-                                                </v-menu>
-                                            </v-btn>
+                                            <div class="ms-2 d-flex flex-wrap align-center gap-2">
+                                                <v-btn density="comfortable" color="default" variant="text"
+                                                       :disabled="loading"
+                                                       :prepend-icon="mdiFilterOutline"
+                                                       @click="showFilterAccountDialog = true">{{ tt('Filter Accounts') }}</v-btn>
+                                                <v-btn density="comfortable" color="default" variant="text"
+                                                       :disabled="loading"
+                                                       :prepend-icon="mdiFilterOutline"
+                                                       @click="showFilterAccountTagDialog = true"
+                                                       v-if="canUseAccountTagFilter">{{ tt('Filter Account Tags') }}</v-btn>
+                                                <v-btn density="comfortable" color="default" variant="text"
+                                                       :disabled="loading"
+                                                       :prepend-icon="mdiFilterOutline"
+                                                       @click="showFilterCategoryDialog = true"
+                                                       v-if="canUseCategoryFilter">{{ tt('Filter Transaction Categories') }}</v-btn>
+                                                <v-btn density="comfortable" color="default" variant="text"
+                                                       :disabled="loading"
+                                                       :prepend-icon="mdiFilterOutline"
+                                                       @click="showFilterTagDialog = true"
+                                                       v-if="canUseTagFilter">{{ tt('Filter Transaction Tags') }}</v-btn>
+                                                <v-btn density="comfortable" color="default" variant="text"
+                                                       :disabled="!statisticsDataHasData"
+                                                       :prepend-icon="mdiExport"
+                                                       @click="exportResults"
+                                                       v-if="!isQuerySpecialChartType">{{ tt('Export Results') }}</v-btn>
+                                                <v-btn density="comfortable" color="default" variant="text"
+                                                       :prepend-icon="mdiFilterCogOutline"
+                                                       to="/app/settings?tab=statisticsSetting">{{ tt('Settings') }}</v-btn>
+                                            </div>
                                         </div>
                                     </template>
 
@@ -226,7 +258,7 @@
                                                      (queryAnalysisType === StatisticsAnalysisType.CategoricalAnalysis && isQuerySpecialChartType && queryChartDataType === ChartDataType.Overview.type && (!categoricalOverviewAnalysisData || !categoricalOverviewAnalysisData.items || !categoricalOverviewAnalysisData.items.length))
                                                   || (queryAnalysisType === StatisticsAnalysisType.CategoricalAnalysis && !isQuerySpecialChartType && (!categoricalAnalysisData || !categoricalAnalysisData.items || !categoricalAnalysisData.items.length))
                                                   || (queryAnalysisType === StatisticsAnalysisType.TrendAnalysis && (!trendsAnalysisData || !trendsAnalysisData.items || !trendsAnalysisData.items.length))
-                                                  || (queryAnalysisType === StatisticsAnalysisType.AssetTrends && (!assetTrendsData || !assetTrendsData.items || !assetTrendsData.items.length))
+                                                  || (queryAnalysisType === StatisticsAnalysisType.AssetTrends && (!assetTrendsDisplayData || !assetTrendsDisplayData.items || !assetTrendsDisplayData.items.length))
                                                   )">
                                         <span class="statistics-subtitle statistics-overview-empty-tip">{{ tt('No transaction data') }}</span>
                                     </v-card-text>
@@ -442,11 +474,11 @@
                                             :data-aggregation-type="ChartDataAggregationType.Last"
                                             :date-aggregation-type="assetTrendsDateAggregationType"
                                             :fiscal-year-start="fiscalYearStart"
-                                            :items="assetTrendsData && assetTrendsData.items && assetTrendsData.items.length ? assetTrendsData.items : []"
+                                            :items="assetTrendsDisplayData && assetTrendsDisplayData.items && assetTrendsDisplayData.items.length ? assetTrendsDisplayData.items : []"
                                             :translate-name="translateNameInTrendsChart"
                                             :show-value="showAmountInChart"
                                             :enable-click-item="true"
-                                            :default-currency="defaultCurrency"
+                                            :default-currency="assetTrendsDisplayCurrencyValue"
                                             :stacked="showStackedInTrendsChart"
                                             :show-total-amount-in-tooltip="showTotalAmountInTrendsChart"
                                             ref="dailyTrendsChart"
@@ -455,7 +487,7 @@
                                             value-field="totalAmount"
                                             hidden-field="hidden"
                                             display-orders-field="displayOrders"
-                                            v-else-if="!initing && assetTrendsData && assetTrendsData.items && assetTrendsData.items.length"
+                                            v-else-if="!initing && assetTrendsDisplayData && assetTrendsDisplayData.items && assetTrendsDisplayData.items.length"
                                             @click="onClickTrendChartItem"
                                         />
                                     </v-card-text>
@@ -487,6 +519,11 @@
             @settings:change="setAccountFilter" />
     </v-dialog>
 
+    <v-dialog width="800" v-model="showFilterAccountTagDialog">
+        <account-tag-filter-settings-card type="statisticsCurrent" :dialog-mode="true"
+            @settings:change="setAccountTagFilter" />
+    </v-dialog>
+
     <v-dialog width="800" v-model="showFilterCategoryDialog">
         <category-filter-settings-card type="statisticsCurrent" :dialog-mode="true"
             @settings:change="setCategoryFilter" />
@@ -506,6 +543,7 @@
 import SnackBar from '@/components/desktop/SnackBar.vue';
 import TrendsChart from '@/components/desktop/TrendsChart.vue';
 import AccountFilterSettingsCard from '@/views/desktop/common/cards/AccountFilterSettingsCard.vue';
+import AccountTagFilterSettingsCard from '@/views/desktop/common/cards/AccountTagFilterSettingsCard.vue';
 import CategoryFilterSettingsCard from '@/views/desktop/common/cards/CategoryFilterSettingsCard.vue';
 import TransactionTagFilterSettingsCard from '@/views/desktop/common/cards/TransactionTagFilterSettingsCard.vue';
 import ExportDialog from '@/views/desktop/statistics/transaction/dialogs/ExportDialog.vue';
@@ -518,11 +556,13 @@ import { useI18n } from '@/locales/helpers.ts';
 import { useStatisticsTransactionPageBase } from '@/views/base/statistics/StatisticsTransactionPageBase.ts';
 
 import { useAccountsStore } from '@/stores/account.ts';
+import { useAccountTagsStore } from '@/stores/accountTag.ts';
 import { useTransactionCategoriesStore } from '@/stores/transactionCategory.ts';
 import { type TransactionStatisticsPartialFilter, useStatisticsStore } from '@/stores/statistics.ts';
 
 import type { TypeAndDisplayName } from '@/core/base.ts';
 import { type TextualYearMonth, type TimeRangeAndDateType, DateRangeScene, DateRange } from '@/core/datetime.ts';
+import type { LocalizedCurrencyInfo } from '@/core/currency.ts';
 import { ThemeType } from '@/core/theme.ts';
 import {
     ChartDataAggregationType,
@@ -541,6 +581,7 @@ import {
     isNumber,
     arrayItemToObjectField
 } from '@/lib/common.ts';
+import { matchSearchText } from '@/lib/search.ts';
 import {
     getGregorianCalendarYearAndMonthFromUnixTime,
     getYearMonthFirstUnixTime,
@@ -561,8 +602,7 @@ import {
     mdiMenu,
     mdiFilterOutline,
     mdiFilterCogOutline,
-    mdiExport,
-    mdiDotsVertical
+    mdiExport
 } from '@mdi/js';
 
 type SnackBarType = InstanceType<typeof SnackBar>;
@@ -577,6 +617,7 @@ interface TransactionStatisticsProps {
     initStartTime?: TextualYearMonth | '',
     initEndTime?: TextualYearMonth | '',
     initFilterAccountIds?: string,
+    initFilterAccountTagIds?: string,
     initFilterCategoryIds?: string,
     initTagFilter?: string,
     initKeyword?: string;
@@ -596,7 +637,8 @@ const {
     getAllCategoricalChartTypes,
     getAllTrendChartTypes,
     formatAmountToWesternArabicNumeralsWithoutDigitGrouping,
-    formatPercentToLocalizedNumerals
+    formatPercentToLocalizedNumerals,
+    getAllCurrencies
 } = useI18n();
 
 const {
@@ -605,6 +647,9 @@ const {
     trendDateAggregationType,
     assetTrendsDateAggregationType,
     defaultCurrency,
+    assetTrendsDisplayCurrency,
+    assetTrendsDisplayCurrencyValue,
+    assetTrendsAvailableCurrencyCodes,
     firstDayOfWeek,
     fiscalYearStart,
     allDateRanges,
@@ -623,6 +668,7 @@ const {
     canShiftDateRange,
     canUseCategoryFilter,
     canUseTagFilter,
+    canUseAccountTagFilter,
     canUseKeywordFilter,
     showAmountInChart,
     totalAmountName,
@@ -633,13 +679,14 @@ const {
     categoricalOverviewAnalysisData,
     categoricalAnalysisData,
     trendsAnalysisData,
-    assetTrendsData,
+    assetTrendsDisplayData,
     canShowCustomDateRange,
     getTransactionCategoricalAnalysisDataItemDisplayColor,
     getDisplayAmount
 } = useStatisticsTransactionPageBase();
 
 const accountsStore = useAccountsStore();
+const accountTagsStore = useAccountTagsStore();
 const transactionCategoriesStore = useTransactionCategoriesStore();
 const statisticsStore = useStatisticsStore();
 
@@ -656,10 +703,15 @@ const showNav = ref<boolean>(display.mdAndUp.value);
 const showCustomDateRangeDialog = ref<boolean>(false);
 const showCustomMonthRangeDialog = ref<boolean>(false);
 const showFilterAccountDialog = ref<boolean>(false);
+const showFilterAccountTagDialog = ref<boolean>(false);
 const showFilterCategoryDialog = ref<boolean>(false);
 const showFilterTagDialog = ref<boolean>(false);
 
 const isDarkMode = computed<boolean>(() => theme.global.name.value === ThemeType.Dark);
+const allCurrencies = computed<LocalizedCurrencyInfo[]>(() => getAllCurrencies());
+const assetTrendsCurrencyOptions = computed<LocalizedCurrencyInfo[]>(() => {
+    return allCurrencies.value.filter(currency => assetTrendsAvailableCurrencyCodes.value.includes(currency.currencyCode));
+});
 
 const statisticsDataHasData = computed<boolean>(() => {
     if (analysisType.value === StatisticsAnalysisType.CategoricalAnalysis) {
@@ -667,7 +719,7 @@ const statisticsDataHasData = computed<boolean>(() => {
     } else if (analysisType.value === StatisticsAnalysisType.TrendAnalysis) {
         return !!trendsAnalysisData.value && !!trendsAnalysisData.value.items && trendsAnalysisData.value.items.length > 0 && !!monthlyTrendsChart.value;
     } else if (analysisType.value === StatisticsAnalysisType.AssetTrends) {
-        return !!assetTrendsData.value && !!assetTrendsData.value.items && assetTrendsData.value.items.length > 0 && !!dailyTrendsChart.value;
+        return !!assetTrendsDisplayData.value && !!assetTrendsDisplayData.value.items && assetTrendsDisplayData.value.items.length > 0 && !!dailyTrendsChart.value;
     }
 
     return false;
@@ -757,6 +809,7 @@ function init(initProps: TransactionStatisticsProps): void {
     const filter: TransactionStatisticsPartialFilter = {
         chartDataType: initProps.initChartDataType ? parseInt(initProps.initChartDataType) : undefined,
         filterAccountIds: initProps.initFilterAccountIds ? arrayItemToObjectField(initProps.initFilterAccountIds.split(','), true) : {},
+        filterAccountTagIds: initProps.initFilterAccountTagIds ? arrayItemToObjectField(initProps.initFilterAccountTagIds.split(','), true) : {},
         filterCategoryIds: initProps.initFilterCategoryIds ? arrayItemToObjectField(initProps.initFilterCategoryIds.split(','), true) : {},
         tagFilter: initProps.initTagFilter,
         keyword: initProps.initKeyword,
@@ -847,7 +900,8 @@ function init(initProps: TransactionStatisticsProps): void {
 
     Promise.all([
         accountsStore.loadAllAccounts({force: false}),
-        transactionCategoriesStore.loadAllCategories({force: false})
+        transactionCategoriesStore.loadAllCategories({force: false}),
+        accountTagsStore.loadAllTags({force: false})
     ]).then(() => {
         if (analysisType.value === StatisticsAnalysisType.CategoricalAnalysis) {
             return statisticsStore.loadCategoricalAnalysis({
@@ -881,6 +935,10 @@ function reload(force: boolean): Promise<unknown> | null {
     let dispatchPromise: Promise<unknown> | null = null;
 
     loading.value = true;
+
+    if (analysisType.value === StatisticsAnalysisType.AssetTrends) {
+        accountTagsStore.loadAllTags({ force: false }).catch(() => {});
+    }
 
     if (query.value.chartDataType === ChartDataType.Overview.type ||
         query.value.chartDataType === ChartDataType.OutflowsByAccount.type ||
@@ -1195,6 +1253,16 @@ function setAccountFilter(changed: boolean): void {
     }
 }
 
+function setAccountTagFilter(changed: boolean): void {
+    showFilterAccountTagDialog.value = false;
+
+    if (changed) {
+        loading.value = true;
+        statisticsStore.updateTransactionStatisticsInvalidState(true);
+        router.push(getFilterLinkUrl());
+    }
+}
+
 function setCategoryFilter(changed: boolean): void {
     showFilterCategoryDialog.value = false;
 
@@ -1281,7 +1349,7 @@ function exportResults(): void {
             data: exportData.data || [],
             supportedMermaidCharts: supportedMermaidCharts
         });
-    } else if (analysisType.value === StatisticsAnalysisType.AssetTrends && assetTrendsData.value && assetTrendsData.value.items && dailyTrendsChart.value) {
+    } else if (analysisType.value === StatisticsAnalysisType.AssetTrends && assetTrendsDisplayData.value && assetTrendsDisplayData.value.items && dailyTrendsChart.value) {
         const exportData = dailyTrendsChart.value.exportData();
         let supportedMermaidCharts: ExportMermaidChartType[] | undefined = undefined;
 
@@ -1324,6 +1392,21 @@ function onClickTrendChartItem(item: { itemId: string, dateRange: TimeRangeAndDa
     router.push(getTransactionItemLinkUrl(item.itemId, item.dateRange));
 }
 
+function filterCurrency(value: string, query: string, item?: { value: unknown, raw: LocalizedCurrencyInfo }): boolean {
+    if (!item) {
+        return false;
+    }
+
+    const lowerCaseFilterContent = query.toLowerCase() || '';
+
+    if (!lowerCaseFilterContent) {
+        return true;
+    }
+
+    return matchSearchText(item.raw.displayName, query)
+        || item.raw.currencyCode.toLowerCase().indexOf(lowerCaseFilterContent) >= 0;
+}
+
 function onShowDateRangeError(message: string): void {
     snackbar.value?.showError(message);
 }
@@ -1338,6 +1421,7 @@ onBeforeRouteUpdate((to) => {
             initStartTime: (to.query['startTime'] as TextualYearMonth | null) || undefined,
             initEndTime: (to.query['endTime'] as TextualYearMonth | null) || undefined,
             initFilterAccountIds: (to.query['filterAccountIds'] as string | null) || undefined,
+            initFilterAccountTagIds: (to.query['filterAccountTagIds'] as string | null) || undefined,
             initFilterCategoryIds: (to.query['filterCategoryIds'] as string | null) || undefined,
             initTagFilter: (to.query['tagFilter'] as string | null) || undefined,
             initKeyword: (to.query['keyword'] as string | null) || undefined,

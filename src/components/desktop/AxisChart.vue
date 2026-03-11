@@ -32,6 +32,12 @@ interface AxisChartDataItem {
     itemStyle: {
         color: ColorStyleValue;
     };
+    label?: {
+        show: boolean;
+        position: string;
+        color: string;
+        formatter: (params: CallbackDataParams) => string;
+    };
     selected: boolean;
     type: string;
     areaStyle?: object;
@@ -217,6 +223,17 @@ const allSeries = computed<AxisChartDataItem[]>(() => {
             finalItem.symbolSize = (data: number): number => {
                 return Math.sqrt(data) / Math.sqrt(maxAmountOfAllData) * 80 + 5;
             }
+        }
+
+        if (props.showValue && props.type === 'column') {
+            finalItem.label = {
+                show: true,
+                position: 'top',
+                color: isDarkMode.value ? '#eee' : '#333',
+                formatter: (params: CallbackDataParams) => {
+                    return getDisplayValue(params.value as number);
+                }
+            };
         }
 
         allSeries.push(finalItem);

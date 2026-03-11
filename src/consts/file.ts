@@ -98,11 +98,11 @@ export const CHARDET_ENCODING_NAME_MAPPING: Record<string, string> = {
 
 export const SUPPORTED_IMPORT_FILE_CATEGORY_AND_TYPES: ImportFileCategoryAndTypes[] = [
     {
-        categoryName: 'ezBookkeeping File Format',
+        categoryName: 'ezfinance File Format',
         fileTypes: [
             {
                 type: 'ezbookkeeping',
-                name: 'ezbookkeeping Data Export File',
+                name: 'ezfinance Data Export File',
                 extensions: '.csv,.tsv',
                 subTypes: [
                     {

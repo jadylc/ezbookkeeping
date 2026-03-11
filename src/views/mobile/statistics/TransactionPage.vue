@@ -8,10 +8,18 @@
                     <f7-icon class="page-title-bar-icon" color="gray" style="opacity: 0.5" f7="chevron_down_circle_fill"></f7-icon>
                 </f7-link>
             </f7-nav-title>
-            <f7-nav-right :class="{ 'disabled': loading }">
-                <f7-link icon-f7="ellipsis" @click="showMoreActionSheet = true"></f7-link>
-            </f7-nav-right>
         </f7-navbar>
+
+        <f7-block class="statistics-action-buttons">
+            <div class="display-flex flex-wrap gap-2">
+                <f7-button small outline :class="{ 'disabled': reloading }" @click="filterAccounts">{{ tt('Filter Accounts') }}</f7-button>
+                <f7-button small outline :class="{ 'disabled': reloading }" @click="filterAccountTags" v-if="canUseAccountTagFilter">{{ tt('Filter Account Tags') }}</f7-button>
+                <f7-button small outline :class="{ 'disabled': reloading }" @click="filterCategories" v-if="canUseCategoryFilter">{{ tt('Filter Transaction Categories') }}</f7-button>
+                <f7-button small outline :class="{ 'disabled': reloading }" @click="filterTags" v-if="canUseTagFilter">{{ tt('Filter Transaction Tags') }}</f7-button>
+                <f7-button small outline :class="{ 'disabled': reloading }" @click="filterDescription" v-if="canUseKeywordFilter">{{ tt('Filter transaction description') }}</f7-button>
+                <f7-button small outline @click="settings">{{ tt('Settings') }}</f7-button>
+            </div>
+        </f7-block>
 
         <f7-popover class="chart-data-type-popover-menu"
                     @popover:open="scrollPopoverToSelectedItem">
@@ -247,6 +255,16 @@
                         <f7-link href="#" popover-open=".sorting-type-popover-menu">{{ querySortingTypeName }}</f7-link>
                     </div>
                 </div>
+                <div class="statistics-chart-header display-flex full-line justify-content-space-between mt-1">
+                    <div></div>
+                    <div class="align-self-flex-end">
+                        <span style="margin-inline-end: 4px;">{{ tt('Display Currency') }}</span>
+                        <f7-link href="#" @click="showDisplayCurrencyPopup = true">
+                            {{ assetTrendsDisplayCurrencyName }}&nbsp;
+                            <small class="smaller">({{ assetTrendsDisplayCurrencyValue }})</small>
+                        </f7-link>
+                    </div>
+                </div>
             </f7-card-header>
             <f7-card-content style="margin-top: -14px" :padding="false">
                 <trends-bar-chart
@@ -260,10 +278,10 @@
                     :data-aggregation-type="ChartDataAggregationType.Last"
                     :date-aggregation-type="assetTrendsDateAggregationType"
                     :fiscal-year-start="fiscalYearStart"
-                    :items="assetTrendsData && assetTrendsData.items && assetTrendsData.items.length ? assetTrendsData.items : []"
+                    :items="assetTrendsDisplayData && assetTrendsDisplayData.items && assetTrendsDisplayData.items.length ? assetTrendsDisplayData.items : []"
                     :stacked="showStackedInTrendsChart"
                     :translate-name="translateNameInTrendsChart"
-                    :default-currency="defaultCurrency"
+                    :default-currency="assetTrendsDisplayCurrencyValue"
                     id-field="id"
                     name-field="name"
                     value-field="totalAmount"
@@ -272,6 +290,18 @@
                     @click="onClickTrendChartItem"
                 />
             </f7-card-content>
+
+            <list-item-selection-popup value-type="item"
+                                       key-field="currencyCode" value-field="currencyCode"
+                                       title-field="displayName" after-field="currencyCode"
+                                       :title="tt('Display Currency')"
+                                       :enable-filter="true"
+                                       :filter-placeholder="tt('Currency')"
+                                       :filter-no-items-text="tt('No results')"
+                                       :items="assetTrendsCurrencyOptions"
+                                       v-model:show="showDisplayCurrencyPopup"
+                                       v-model="assetTrendsDisplayCurrency">
+            </list-item-selection-popup>
         </f7-card>
 
         <f7-popover class="sorting-type-popover-menu">
@@ -379,23 +409,6 @@
                                      @dateRange:change="setCustomDateFilter">
         </month-range-selection-sheet>
 
-        <f7-actions close-by-outside-click close-on-escape :opened="showMoreActionSheet" @actions:closed="showMoreActionSheet = false">
-            <f7-actions-group>
-                <f7-actions-button :class="{ 'disabled': reloading }" @click="filterAccounts">{{ tt('Filter Accounts') }}</f7-actions-button>
-                <f7-actions-button :class="{ 'disabled': reloading }" @click="filterCategories" v-if="canUseCategoryFilter">{{ tt('Filter Transaction Categories') }}</f7-actions-button>
-                <f7-actions-button :class="{ 'disabled': reloading }" @click="filterTags" v-if="canUseTagFilter">{{ tt('Filter Transaction Tags') }}</f7-actions-button>
-            </f7-actions-group>
-            <f7-actions-group v-if="canUseKeywordFilter">
-                <f7-actions-label v-if="query.keyword">{{ query.keyword }}</f7-actions-label>
-                <f7-actions-button :class="{ 'disabled': reloading }" @click="filterDescription">{{ tt('Filter transaction description') }}</f7-actions-button>
-            </f7-actions-group>
-            <f7-actions-group>
-                <f7-actions-button @click="settings">{{ tt('Settings') }}</f7-actions-button>
-            </f7-actions-group>
-            <f7-actions-group>
-                <f7-actions-button bold close>{{ tt('Cancel') }}</f7-actions-button>
-            </f7-actions-group>
-        </f7-actions>
     </f7-page>
 </template>
 
@@ -407,12 +420,14 @@ import { useI18n } from '@/locales/helpers.ts';
 import { useStatisticsTransactionPageBase } from '@/views/base/statistics/StatisticsTransactionPageBase.ts';
 
 import { useAccountsStore } from '@/stores/account.ts';
+import { useAccountTagsStore } from '@/stores/accountTag.ts';
 import { useTransactionCategoriesStore } from '@/stores/transactionCategory.ts';
 import { useStatisticsStore } from '@/stores/statistics.ts';
 
 import type { TypeAndDisplayName } from '@/core/base.ts';
 import { TextDirection } from '@/core/text.ts';
 import { type TextualYearMonth, type TimeRangeAndDateType, DateRangeScene, DateRange } from '@/core/datetime.ts';
+import type { LocalizedCurrencyInfo } from '@/core/currency.ts';
 import {
     ChartDataAggregationType,
     StatisticsAnalysisType,
@@ -442,6 +457,8 @@ const {
     tt,
     getCurrentLanguageTextDirection,
     getAllCategoricalChartTypes,
+    getAllCurrencies,
+    getCurrencyName,
     formatPercentToLocalizedNumerals
 } = useI18n();
 
@@ -453,6 +470,9 @@ const {
     trendDateAggregationType,
     assetTrendsDateAggregationType,
     defaultCurrency,
+    assetTrendsDisplayCurrency,
+    assetTrendsDisplayCurrencyValue,
+    assetTrendsAvailableCurrencyCodes,
     firstDayOfWeek,
     fiscalYearStart,
     allDateRanges,
@@ -474,6 +494,7 @@ const {
     canShiftDateRange,
     canUseCategoryFilter,
     canUseTagFilter,
+    canUseAccountTagFilter,
     canUseKeywordFilter,
     showAmountInChart,
     totalAmountName,
@@ -482,13 +503,14 @@ const {
     translateNameInTrendsChart,
     categoricalAnalysisData,
     trendsAnalysisData,
-    assetTrendsData,
+    assetTrendsDisplayData,
     canShowCustomDateRange,
     getTransactionCategoricalAnalysisDataItemDisplayColor,
     getDisplayAmount
 } = useStatisticsTransactionPageBase();
 
 const accountsStore = useAccountsStore();
+const accountTagsStore = useAccountTagsStore();
 const transactionCategoriesStore = useTransactionCategoriesStore();
 const statisticsStore = useStatisticsStore();
 
@@ -496,9 +518,14 @@ const loadingError = ref<unknown | null>(null);
 const reloading = ref<boolean>(false);
 const showCustomDateRangeSheet = ref<boolean>(false);
 const showCustomMonthRangeSheet = ref<boolean>(false);
-const showMoreActionSheet = ref<boolean>(false);
+const showDisplayCurrencyPopup = ref<boolean>(false);
 
 const textDirection = computed<TextDirection>(() => getCurrentLanguageTextDirection());
+const allCurrencies = computed<LocalizedCurrencyInfo[]>(() => getAllCurrencies());
+const assetTrendsDisplayCurrencyName = computed<string>(() => getCurrencyName(assetTrendsDisplayCurrencyValue.value));
+const assetTrendsCurrencyOptions = computed<LocalizedCurrencyInfo[]>(() => {
+    return allCurrencies.value.filter(currency => assetTrendsAvailableCurrencyCodes.value.includes(currency.currencyCode));
+});
 
 const allChartTypes = computed<TypeAndDisplayName[]>(() => {
     if (analysisType.value === StatisticsAnalysisType.CategoricalAnalysis) {
@@ -534,7 +561,8 @@ function init(): void {
 
     Promise.all([
         accountsStore.loadAllAccounts({ force: false }),
-        transactionCategoriesStore.loadAllCategories({ force: false })
+        transactionCategoriesStore.loadAllCategories({ force: false }),
+        accountTagsStore.loadAllTags({ force: false })
     ]).then(() => {
         if (analysisType.value === StatisticsAnalysisType.CategoricalAnalysis) {
             return statisticsStore.loadCategoricalAnalysis({
@@ -568,6 +596,10 @@ function reload(done?: () => void): void {
     let dispatchPromise: Promise<unknown> | null = null;
 
     reloading.value = true;
+
+    if (analysisType.value === StatisticsAnalysisType.AssetTrends) {
+        accountTagsStore.loadAllTags({ force: false }).catch(() => {});
+    }
 
     if (query.value.chartDataType === ChartDataType.OutflowsByAccount.type ||
         query.value.chartDataType === ChartDataType.ExpenseByAccount.type ||
@@ -836,6 +868,10 @@ function shiftDateRange(scale: number): void {
 
 function filterAccounts(): void {
     props.f7router.navigate('/settings/filter/account?type=statisticsCurrent');
+}
+
+function filterAccountTags(): void {
+    props.f7router.navigate('/settings/filter/account_tag?type=statisticsCurrent');
 }
 
 function filterCategories(): void {

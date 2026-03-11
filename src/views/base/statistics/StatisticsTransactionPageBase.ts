@@ -1,10 +1,11 @@
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 
 import { useI18n } from '@/locales/helpers.ts';
 
 import { useSettingsStore } from '@/stores/setting.ts';
 import { useUserStore } from '@/stores/user.ts';
 import { type TransactionStatisticsFilter, useStatisticsStore } from '@/stores/statistics.ts';
+import { useExchangeRatesStore } from '@/stores/exchangeRates.ts';
 
 import type { TypeAndDisplayName } from '@/core/base.ts';
 import { type LocalizedDateRange, type WeekDayValue, DateRangeScene, DateRange } from '@/core/datetime.ts';
@@ -27,7 +28,7 @@ import type {
     TransactionAssetTrendsAnalysisData
 } from '@/models/transaction.ts';
 
-import { limitText, findNameByType, findDisplayNameByType } from '@/lib/common.ts';
+import { limitText, findNameByType, findDisplayNameByType, isNumber } from '@/lib/common.ts';
 import {
     parseDateTimeFromUnixTime,
     getYearMonthFirstUnixTime,
@@ -50,6 +51,7 @@ export function useStatisticsTransactionPageBase() {
     const settingsStore = useSettingsStore();
     const userStore = useUserStore();
     const statisticsStore = useStatisticsStore();
+    const exchangeRatesStore = useExchangeRatesStore();
 
     const loading = ref<boolean>(true);
     const analysisType = ref<StatisticsAnalysisType>(StatisticsAnalysisType.CategoricalAnalysis);
@@ -58,6 +60,26 @@ export function useStatisticsTransactionPageBase() {
 
     const showAccountBalance = computed<boolean>(() => settingsStore.appSettings.showAccountBalance);
     const defaultCurrency = computed<string>(() => userStore.currentUserDefaultCurrency);
+    const assetTrendsDisplayCurrency = ref<string>(defaultCurrency.value);
+    const assetTrendsDisplayCurrencyValue = computed<string>(() => assetTrendsDisplayCurrency.value || defaultCurrency.value);
+    const assetTrendsAvailableCurrencyCodes = computed<string[]>(() => {
+        const codes = new Set<string>();
+        const baseCurrency = defaultCurrency.value;
+
+        if (baseCurrency) {
+            codes.add(baseCurrency);
+        }
+
+        const exchangeRateMap = exchangeRatesStore.latestExchangeRateMap;
+
+        if (baseCurrency && exchangeRateMap && exchangeRateMap[baseCurrency]) {
+            for (const currency of Object.keys(exchangeRateMap)) {
+                codes.add(currency);
+            }
+        }
+
+        return Array.from(codes);
+    });
     const firstDayOfWeek = computed<WeekDayValue>(() => userStore.currentUserFirstDayOfWeek);
     const fiscalYearStart = computed<number>(() => userStore.currentUserFiscalYearStart);
 
@@ -229,6 +251,10 @@ export function useStatisticsTransactionPageBase() {
         return canUseServerCustomFilter.value;
     });
 
+    const canUseAccountTagFilter = computed<boolean>(() => {
+        return analysisType.value === StatisticsAnalysisType.AssetTrends;
+    });
+
     const canUseKeywordFilter = computed<boolean>(() => {
         return canUseServerCustomFilter.value;
     });
@@ -303,6 +329,56 @@ export function useStatisticsTransactionPageBase() {
     const categoricalAnalysisData = computed<TransactionCategoricalAnalysisData>(() => statisticsStore.categoricalAnalysisData);
     const trendsAnalysisData = computed<TransactionTrendsAnalysisData | null>(() => statisticsStore.trendsAnalysisData);
     const assetTrendsData = computed<TransactionAssetTrendsAnalysisData | null>(() => statisticsStore.assetTrendsData);
+    const assetTrendsDisplayData = computed<TransactionAssetTrendsAnalysisData | null>(() => {
+        const data = assetTrendsData.value;
+
+        if (!data) {
+            return null;
+        }
+
+        const sourceCurrency = defaultCurrency.value;
+        const targetCurrency = assetTrendsDisplayCurrencyValue.value;
+
+        if (!assetTrendsAvailableCurrencyCodes.value.includes(targetCurrency)) {
+            return null;
+        }
+
+        if (!targetCurrency || targetCurrency === sourceCurrency) {
+            return data;
+        }
+
+        const convertedItems = data.items.map(item => {
+            const convertedTotalAmount = exchangeRatesStore.getExchangedAmount(item.totalAmount, sourceCurrency, targetCurrency);
+            const convertedItemAmounts = item.items.map((amountItem) => {
+                const convertedAmount = exchangeRatesStore.getExchangedAmount(amountItem.totalAmount, sourceCurrency, targetCurrency);
+
+                return {
+                    ...amountItem,
+                    totalAmount: isNumber(convertedAmount) ? Math.trunc(convertedAmount) : amountItem.totalAmount
+                };
+            });
+
+            return {
+                ...item,
+                totalAmount: isNumber(convertedTotalAmount) ? Math.trunc(convertedTotalAmount) : item.totalAmount,
+                items: convertedItemAmounts
+            };
+        });
+
+        return {
+            items: convertedItems
+        };
+    });
+
+    watch([assetTrendsAvailableCurrencyCodes, defaultCurrency], ([codes, baseCurrency]) => {
+        if (!baseCurrency) {
+            return;
+        }
+
+        if (!codes.includes(assetTrendsDisplayCurrency.value)) {
+            assetTrendsDisplayCurrency.value = baseCurrency;
+        }
+    }, { immediate: true });
 
     function canShowCustomDateRange(dateRangeType: number): boolean {
         if (analysisType.value === StatisticsAnalysisType.CategoricalAnalysis) {
@@ -352,6 +428,9 @@ export function useStatisticsTransactionPageBase() {
         // computed states
         showAccountBalance,
         defaultCurrency,
+        assetTrendsDisplayCurrency,
+        assetTrendsDisplayCurrencyValue,
+        assetTrendsAvailableCurrencyCodes,
         firstDayOfWeek,
         fiscalYearStart,
         allDateRanges,
@@ -373,6 +452,7 @@ export function useStatisticsTransactionPageBase() {
         canShiftDateRange,
         canUseCategoryFilter,
         canUseTagFilter,
+        canUseAccountTagFilter,
         canUseKeywordFilter,
         showAmountInChart,
         totalAmountName,
@@ -384,6 +464,7 @@ export function useStatisticsTransactionPageBase() {
         categoricalAnalysisData,
         trendsAnalysisData,
         assetTrendsData,
+        assetTrendsDisplayData,
         // functions
         canShowCustomDateRange,
         getTransactionCategoricalAnalysisDataItemDisplayColor,

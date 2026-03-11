@@ -82,7 +82,7 @@ func (h *mcpQueryAllAccountsBalanceToolHandler) createNewMCPQueryAllAccountsBala
 	for i := 0; i < len(accounts); i++ {
 		account := accounts[i]
 
-		if account.Hidden || (account.Type == models.ACCOUNT_TYPE_MULTI_SUB_ACCOUNTS && account.ParentAccountId == models.LevelOneAccountParentId) {
+		if account.Hidden {
 			continue
 		}
 

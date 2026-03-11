@@ -1,5 +1,13 @@
 <template>
     <f7-app v-bind="f7params">
+        <div class="global-top-right-tools">
+            <div class="default-currency-chip" v-if="defaultCurrency">
+                <span class="currency-label">{{ tt('Default Currency') }}</span>
+                <span class="currency-name">{{ getCurrencyName(defaultCurrency) }}</span>
+                <span class="currency-code">({{ defaultCurrency }})</span>
+            </div>
+            <f7-link class="theme-toggle" :icon-f7="currentThemeIcon" @click="toggleTheme"></f7-link>
+        </div>
         <f7-view id="main-view" class="safe-areas" main url="/"></f7-view>
     </f7-app>
 </template>
@@ -30,7 +38,7 @@ import { updateMapCacheExpiration } from '@/lib/cache.ts';
 import { setExpenseAndIncomeAmountColor } from '@/lib/ui/common.ts';
 import { isiOSHomeScreenMode, isModalShowing, setAppFontSize } from '@/lib/ui/mobile.ts';
 
-const { tt, getCurrentLanguageInfo, setLanguage, initLocale } = useI18n();
+const { tt, getCurrentLanguageInfo, setLanguage, initLocale, getCurrencyName } = useI18n();
 
 const rootStore = useRootStore();
 const settingsStore = useSettingsStore();
@@ -40,7 +48,7 @@ const tokensStore = useTokensStore();
 const exchangeRatesStore = useExchangeRatesStore();
 
 const f7params = ref<Framework7Parameters>({
-    name: 'ezBookkeeping',
+    name: 'ezfinance',
     theme: 'ios',
     colors: {
         primary: '#c67e48'
@@ -111,6 +119,17 @@ const notification = ref<Notification.Notification | null>(null);
 const hasPushPopupBackdrop = ref<boolean | undefined>(undefined);
 const hasBackdrop = ref<boolean | undefined>(undefined);
 const currentNotificationContent = computed<string | null>(() => rootStore.currentNotification);
+const defaultCurrency = computed<string>(() => userStore.currentUserDefaultCurrency);
+const currentTheme = computed<string>(() => settingsStore.appSettings.theme);
+const currentThemeIcon = computed<string>(() => {
+    if (currentTheme.value === ThemeType.Light) {
+        return 'sun_max';
+    } else if (currentTheme.value === ThemeType.Dark) {
+        return 'moon';
+    }
+
+    return 'circle_lefthalf_fill';
+});
 
 function setThemeColorMeta(darkMode: boolean | undefined): void {
     if (hasPushPopupBackdrop.value) {
@@ -141,6 +160,19 @@ function onBackdropChanged(element: { push?: boolean, opened?: boolean }): void 
     }
 
     setThemeColorMeta(environmentsStore.framework7DarkMode);
+}
+
+function toggleTheme(): void {
+    let nextTheme: string = ThemeType.Light;
+
+    if (currentTheme.value === ThemeType.Light) {
+        nextTheme = ThemeType.Dark;
+    } else if (currentTheme.value === ThemeType.Dark) {
+        nextTheme = 'auto';
+    }
+
+    settingsStore.setTheme(nextTheme);
+    location.reload();
 }
 
 onMounted(() => {
@@ -236,3 +268,52 @@ if (isUserLogined()) {
     }
 }
 </script>
+
+<style>
+.global-top-right-tools {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 8px);
+    right: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    z-index: 2000;
+    pointer-events: auto;
+}
+
+.default-currency-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 999px;
+    background: rgba(var(--f7-theme-color-rgb), 0.12);
+    color: var(--f7-theme-color);
+    font-size: 12px;
+    line-height: 16px;
+    max-width: 180px;
+}
+
+.default-currency-chip .currency-label {
+    font-size: 11px;
+    opacity: 0.7;
+}
+
+.default-currency-chip .currency-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.default-currency-chip .currency-code {
+    opacity: 0.7;
+}
+
+.theme-toggle {
+    min-width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    background: rgba(var(--f7-theme-color-rgb), 0.12);
+    color: var(--f7-theme-color);
+}
+</style>

@@ -62,6 +62,12 @@
                     </router-link>
                 </li>
                 <li class="nav-link">
+                    <router-link to="/account/tag/list">
+                        <v-icon class="nav-item-icon" :icon="mdiTagOutline"/>
+                        <span class="nav-item-title">{{ tt('Account Tags') }}</span>
+                    </router-link>
+                </li>
+                <li class="nav-link">
                     <router-link to="/category/list">
                         <v-icon class="nav-item-icon" :icon="mdiViewDashboardOutline"/>
                         <span class="nav-item-title">{{ tt('Transaction Categories') }}</span>
@@ -120,6 +126,12 @@
                             <h1 class="font-weight-medium text-xl">{{ tt('global.app.title') }}</h1>
                         </div>
                         <v-spacer />
+                        <v-chip size="small" variant="tonal" class="me-2 default-currency-chip"
+                                v-if="defaultCurrency">
+                            <span class="default-currency-label">{{ tt('Default Currency') }}</span>
+                            <span class="ms-1 text-truncate">{{ getCurrencyName(defaultCurrency) }}</span>
+                            <span class="ms-1 text-caption">({{ defaultCurrency }})</span>
+                        </v-chip>
                         <v-btn color="primary" variant="text" class="me-2"
                                :icon="true" @click="(currentTheme === 'light' ? currentTheme = 'dark' : (currentTheme === 'dark' ? currentTheme = 'auto' : currentTheme = 'light'))">
                             <v-icon :icon="(currentTheme === 'light' ? mdiWeatherSunny : (currentTheme === 'dark' ? mdiWeatherNight : mdiThemeLightDark))" size="24" />
@@ -248,7 +260,7 @@ const theme = useTheme();
 const route = useRoute();
 const router = useRouter();
 
-const { tt, initLocale } = useI18n();
+const { tt, initLocale, getCurrencyName } = useI18n();
 
 const rootStore = useRootStore();
 const settingsStore = useSettingsStore();
@@ -268,6 +280,7 @@ const currentRoutePath = computed<string>(() => route.path);
 
 const currentNickName = computed<string>(() => userStore.currentUserNickname || tt('User'));
 const currentUserAvatar = computed<string | null>(() => userStore.getUserAvatarUrl(userStore.currentUserBasicInfo, true));
+const defaultCurrency = computed<string>(() => userStore.currentUserDefaultCurrency);
 
 const currentTheme = computed<string>({
     get: () => {
@@ -333,6 +346,15 @@ function showAddDialogInTransactionListPage(): void {
 .main-logo {
     width: 1.75rem;
     height: 1.75rem;
+}
+
+.default-currency-chip {
+    max-width: 220px;
+}
+
+.default-currency-chip .default-currency-label {
+    font-size: 0.75rem;
+    color: rgba(var(--v-theme-on-background), var(--v-medium-emphasis-opacity));
 }
 
 .nav-link.home-link > a:not(.router-link-exact-active):hover::before {

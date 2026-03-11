@@ -170,34 +170,14 @@ func TestGetAccountOrSubAccountIdsByAccountName_MatchMultiple(t *testing.T) {
 			Type:      models.ACCOUNT_TYPE_SINGLE_ACCOUNT,
 		},
 		{
-			AccountId:       2001,
-			Name:            "Test Account",
-			Type:            models.ACCOUNT_TYPE_MULTI_SUB_ACCOUNTS,
-			ParentAccountId: 0,
+			AccountId: 2001,
+			Name:      "Test Account",
+			Type:      models.ACCOUNT_TYPE_SINGLE_ACCOUNT,
 		},
 		{
-			AccountId:       2002,
-			Name:            "Sub 1-1",
-			Type:            models.ACCOUNT_TYPE_SINGLE_ACCOUNT,
-			ParentAccountId: 2001,
-		},
-		{
-			AccountId:       2003,
-			Name:            "Sub 1-2",
-			Type:            models.ACCOUNT_TYPE_SINGLE_ACCOUNT,
-			ParentAccountId: 2001,
-		},
-		{
-			AccountId:       3001,
-			Name:            "Test Account",
-			Type:            models.ACCOUNT_TYPE_MULTI_SUB_ACCOUNTS,
-			ParentAccountId: 0,
-		},
-		{
-			AccountId:       3002,
-			Name:            "Sub 2-1",
-			Type:            models.ACCOUNT_TYPE_SINGLE_ACCOUNT,
-			ParentAccountId: 3001,
+			AccountId: 3001,
+			Name:      "Test Account",
+			Type:      models.ACCOUNT_TYPE_MULTI_SUB_ACCOUNTS,
 		},
 		{
 			AccountId: 4001,
@@ -207,12 +187,9 @@ func TestGetAccountOrSubAccountIdsByAccountName_MatchMultiple(t *testing.T) {
 	}
 	actualAccountMap := Accounts.GetAccountOrSubAccountIdsByAccountName(accounts, "Test Account")
 
-	assert.Equal(t, 4, len(actualAccountMap))
+	assert.Equal(t, 2, len(actualAccountMap))
 	assert.Contains(t, actualAccountMap, int64(1001))
-	assert.Contains(t, actualAccountMap, int64(2002))
-	assert.Contains(t, actualAccountMap, int64(2003))
-	assert.Contains(t, actualAccountMap, int64(3002))
-	assert.NotContains(t, actualAccountMap, int64(2001))
+	assert.Contains(t, actualAccountMap, int64(2001))
 	assert.NotContains(t, actualAccountMap, int64(3001))
 	assert.NotContains(t, actualAccountMap, int64(4001))
 }

@@ -248,7 +248,7 @@
                                 <v-col cols="12" md="6" v-if="type === TransactionEditPageType.Transaction">
                                     <date-time-select
                                         :readonly="mode === TransactionEditPageMode.View"
-                                        :disabled="loading || submitting || (mode === TransactionEditPageMode.Edit && transaction.type === TransactionType.ModifyBalance)"
+                                     :disabled="loading || submitting"
                                         :label="tt('Transaction Time')"
                                         :timezone-utc-offset="transaction.utcOffset"
                                         :model-value="transaction.time"
@@ -271,7 +271,7 @@
                                         auto-select-first
                                         persistent-placeholder
                                         :readonly="mode === TransactionEditPageMode.View"
-                                        :disabled="loading || submitting || (mode === TransactionEditPageMode.Edit && transaction.type === TransactionType.ModifyBalance)"
+                                     :disabled="loading || submitting"
                                         :label="tt('Transaction Timezone')"
                                         :placeholder="!transaction.timeZone && transaction.timeZone !== '' ? `(${transactionDisplayTimezone}) ${transactionTimezoneTimeDifference}` : tt('Timezone')"
                                         :items="allTimezones"

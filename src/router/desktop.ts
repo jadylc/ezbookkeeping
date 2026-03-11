@@ -25,6 +25,7 @@ import AccountListPage from '@/views/desktop/accounts/ListPage.vue';
 import TransactionCategoryListPage from '@/views/desktop/categories/ListPage.vue';
 
 import TransactionTagListPage from '@/views/desktop/tags/ListPage.vue';
+import AccountTagListPage from '@/views/desktop/account_tags/ListPage.vue';
 
 import TransactionTemplateListPage from '@/views/desktop/templates/ListPage.vue';
 
@@ -130,6 +131,7 @@ const router = createRouter({
                         initStartTime: route.query['startTime'],
                         initEndTime: route.query['endTime'],
                         initFilterAccountIds: route.query['filterAccountIds'],
+                        initFilterAccountTagIds: route.query['filterAccountTagIds'],
                         initFilterCategoryIds: route.query['filterCategoryIds'],
                         initTagFilter: route.query['tagFilter'],
                         initKeyword: route.query['keyword'],
@@ -153,6 +155,11 @@ const router = createRouter({
                 {
                     path: '/account/list',
                     component: AccountListPage,
+                    beforeEnter: checkLogin
+                },
+                {
+                    path: '/account/tag/list',
+                    component: AccountTagListPage,
                     beforeEnter: checkLogin
                 },
                 {

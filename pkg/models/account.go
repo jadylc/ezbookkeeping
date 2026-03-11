@@ -91,6 +91,8 @@ type Account struct {
 // AccountExtend represents account extend data stored in database
 type AccountExtend struct {
 	CreditCardStatementDate *int `json:"creditCardStatementDate"`
+	Tag                     string   `json:"tag,omitempty"`
+	Tags                    []string `json:"tags,omitempty"`
 }
 
 // AccountCreateRequest represents all parameters of account creation request
@@ -104,6 +106,8 @@ type AccountCreateRequest struct {
 	Balance                 int64                   `json:"balance"`
 	BalanceTime             int64                   `json:"balanceTime"`
 	Comment                 string                  `json:"comment" binding:"max=255"`
+	Tag                     string                  `json:"tag" binding:"max=64"`
+	Tags                    []string                `json:"tags"`
 	CreditCardStatementDate int                     `json:"creditCardStatementDate" binding:"min=0,max=28"`
 	SubAccounts             []*AccountCreateRequest `json:"subAccounts" binding:"omitempty"`
 	ClientSessionId         string                  `json:"clientSessionId"`
@@ -120,6 +124,8 @@ type AccountModifyRequest struct {
 	Balance                 *int64                  `json:"balance" binding:"omitempty"`
 	BalanceTime             *int64                  `json:"balanceTime" binding:"omitempty"`
 	Comment                 string                  `json:"comment" binding:"max=255"`
+	Tag                     string                  `json:"tag" binding:"max=64"`
+	Tags                    []string                `json:"tags"`
 	CreditCardStatementDate int                     `json:"creditCardStatementDate" binding:"min=0,max=28"`
 	Hidden                  bool                    `json:"hidden"`
 	SubAccounts             []*AccountModifyRequest `json:"subAccounts" binding:"omitempty"`
@@ -170,6 +176,8 @@ type AccountInfoResponse struct {
 	Currency                string                   `json:"currency"`
 	Balance                 int64                    `json:"balance"`
 	Comment                 string                   `json:"comment"`
+	Tag                     string                   `json:"tag,omitempty"`
+	Tags                    []string                 `json:"tags,omitempty"`
 	CreditCardStatementDate *int                     `json:"creditCardStatementDate,omitempty"`
 	DisplayOrder            int32                    `json:"displayOrder"`
 	IsAsset                 bool                     `json:"isAsset,omitempty"`
@@ -181,6 +189,8 @@ type AccountInfoResponse struct {
 // ToAccountInfoResponse returns a view-object according to database model
 func (a *Account) ToAccountInfoResponse() *AccountInfoResponse {
 	var creditCardStatementDate *int
+	accountTag := ""
+	var accountTags []string
 
 	if a.ParentAccountId == LevelOneAccountParentId && a.Category == ACCOUNT_CATEGORY_CREDIT_CARD {
 		if a.Extend != nil {
@@ -188,6 +198,17 @@ func (a *Account) ToAccountInfoResponse() *AccountInfoResponse {
 		} else {
 			creditCardStatementDate = &defaultCreditCardAccountStatementDate
 		}
+	}
+
+	if a.Extend != nil {
+		if len(a.Extend.Tags) > 0 {
+			accountTags = a.Extend.Tags
+		} else if a.Extend.Tag != "" {
+			accountTags = []string{a.Extend.Tag}
+		}
+	}
+	if len(accountTags) > 0 {
+		accountTag = accountTags[0]
 	}
 
 	return &AccountInfoResponse{
@@ -201,6 +222,8 @@ func (a *Account) ToAccountInfoResponse() *AccountInfoResponse {
 		Currency:                a.Currency,
 		Balance:                 a.Balance,
 		Comment:                 a.Comment,
+		Tag:                     accountTag,
+		Tags:                    accountTags,
 		CreditCardStatementDate: creditCardStatementDate,
 		DisplayOrder:            a.DisplayOrder,
 		IsAsset:                 assetAccountCategory[a.Category],

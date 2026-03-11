@@ -6,6 +6,7 @@ import {
     type TransactionCategoryCreateWithSubCategories,
     TransactionCategory
 } from '@/models/transaction_category.ts';
+import { matchSearchText } from '@/lib/search.ts';
 
 export function transactionTypeToCategoryType(transactionType: TransactionType): CategoryType | null {
     if (transactionType === TransactionType.Income) {
@@ -140,7 +141,7 @@ export function filterTransactionCategories(allTransactionCategories: Record<num
             || allowCategoryTypes[CategoryType.Transfer]);
 
     const allCategoryTypes = [ CategoryType.Income, CategoryType.Expense, CategoryType.Transfer ];
-    const lowercaseFilterContent = allowCategoryName ? allowCategoryName.toLowerCase() : '';
+    const filterContent = allowCategoryName || '';
 
     for (const categoryType of allCategoryTypes) {
         const allCategories = allTransactionCategories[categoryType];
@@ -160,7 +161,7 @@ export function filterTransactionCategories(allTransactionCategories: Record<num
                 continue;
             }
 
-            const categoryMatchesName = !lowercaseFilterContent || category.name.toLowerCase().includes(lowercaseFilterContent);
+            const categoryMatchesName = !filterContent || matchSearchText(category.name, filterContent);
             const filteredSubCategories: TransactionCategory[] = [];
 
             if (category.subCategories) {
@@ -169,7 +170,7 @@ export function filterTransactionCategories(allTransactionCategories: Record<num
                         continue;
                     }
 
-                    if (!categoryMatchesName && lowercaseFilterContent && !subCategory.name.toLowerCase().includes(lowercaseFilterContent)) {
+                    if (!categoryMatchesName && filterContent && !matchSearchText(subCategory.name, filterContent)) {
                         continue;
                     }
 

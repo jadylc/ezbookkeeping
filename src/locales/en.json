@@ -1,7 +1,7 @@
 {
     "global": {
         "app": {
-            "title": "ezBookkeeping"
+            "title": "ezfinance"
         }
     },
     "language": {
@@ -137,20 +137,20 @@
             "clearTransactionsInAccountTip": "You CANNOT undo this action. This will clear your transactions data in {account}. Please enter your current password to confirm.",
             "accountActivationAndResendValidationEmailTip": "Account activation link has been sent to your email address: {email}, If you don't receive the mail, please fill password again and click the button below to resend the validation mail.",
             "resendValidationEmailTip": "If you don't receive the mail, please fill password again and click the button below to resend the validation mail to: {email}",
-            "oauth2bindTip": "You're signing in to the {userName} user using {providerName}. Please enter your ezBookkeeping password to verify."
+            "oauth2bindTip": "You're signing in to the {userName} user using {providerName}. Please enter your ezfinance password to verify."
         }
     },
     "dataExport": {
-        "defaultExportFilename": "ezBookkeeping_export_data",
-        "exportFilename": "ezBookkeeping_{nickname}_export_data",
-        "defaultExportStatisticsFileName": "ezBookkeeping_statistics_data",
-        "exportStatisticsFileName": "ezBookkeeping_{nickname}_statistics_data",
-        "defaultExportReconciliationStatementsFileName": "ezBookkeeping_reconciliation_statements",
-        "exportReconciliationStatementsFileName": "ezBookkeeping_{nickname}_reconciliation_statements",
-        "defaultImportDataMappingFileName": "ezBookkeeping_import_data_mapping",
-        "defaultImportHandlingScript": "ezBookkeeping_handling_script",
-        "defaultImportReplaceRuleFileName": "ezBookkeeping_import_replace_rule",
-        "defaultImportCheckResultFileName": "ezBookkeeping_import_check_result"
+        "defaultExportFilename": "ezfinance_export_data",
+        "exportFilename": "ezfinance_{nickname}_export_data",
+        "defaultExportStatisticsFileName": "ezfinance_statistics_data",
+        "exportStatisticsFileName": "ezfinance_{nickname}_statistics_data",
+        "defaultExportReconciliationStatementsFileName": "ezfinance_reconciliation_statements",
+        "exportReconciliationStatementsFileName": "ezfinance_{nickname}_reconciliation_statements",
+        "defaultImportDataMappingFileName": "ezfinance_import_data_mapping",
+        "defaultImportHandlingScript": "ezfinance_handling_script",
+        "defaultImportReplaceRuleFileName": "ezfinance_import_replace_rule",
+        "defaultImportCheckResultFileName": "ezfinance_import_check_result"
     },
     "calendar": {
         "Gregorian": "Gregorian",
@@ -1620,8 +1620,8 @@
     "Change Language": "Change Language",
     "Date is too early": "Date is too early",
     "User Canceled": "User Canceled",
-    "Welcome to ezBookkeeping": "Welcome to ezBookkeeping",
-    "Please log in with your ezBookkeeping account": "Please log in with your ezBookkeeping account",
+    "Welcome to ezBookkeeping": "Welcome to ezfinance",
+    "Please log in with your ezBookkeeping account": "Please log in with your ezfinance account",
     "Unlock Application": "Unlock Application",
     "Please enter your PIN code or use WebAuthn to unlock application": "Please enter your PIN code or use WebAuthn to unlock application",
     "Please enter your PIN code to unlock application": "Please enter your PIN code to unlock application",
@@ -1640,6 +1640,7 @@
     "Nickname": "Nickname",
     "Your nickname": "Your nickname",
     "Default Currency": "Default Currency",
+    "Display Currency": "Display Currency",
     "Default Account": "Default Account",
     "First Day of Week": "First Day of Week",
     "Fiscal Year Start Date": "Fiscal Year Start Date",
@@ -1827,6 +1828,9 @@
     "Account Type": "Account Type",
     "Account Name": "Account Name",
     "Your account name": "Your account name",
+    "Account Tag": "Account Tag",
+    "Account Tags": "Account Tags",
+    "Your account tag (optional)": "Your account tag (optional)",
     "Main Account": "Main Account",
     "Sub Account": "Sub Account",
     "Sub-account Name": "Sub-account Name",
@@ -1970,13 +1974,13 @@
     "Filter Description": "Filter Description",
     "How to import this file?": "How to import this file?",
     "How to export this file?": "How to export this file?",
-    "ezBookkeeping File Format": "ezBookkeeping File Format",
+    "ezBookkeeping File Format": "ezfinance File Format",
     "Custom File Format": "Custom File Format",
     "General Data Exchange Format": "General Data Exchange Format",
     "General Bank Statement Format": "General Bank Statement Format",
     "Other Bank/Payment App Statement File": "Other Bank/Payment App Statement File",
     "Other Finance App File Format": "Other Finance App File Format",
-    "ezbookkeeping Data Export File": "ezbookkeeping Data Export File",
+    "ezbookkeeping Data Export File": "ezfinance Data Export File",
     "Excel Workbook File": "Excel Workbook File",
     "Excel Workbook File (.xlsx)": "Excel Workbook File (.xlsx)",
     "Excel 97-2003 Workbook File (.xls)": "Excel 97-2003 Workbook File (.xls)",
@@ -2194,6 +2198,7 @@
     "Filter Accounts": "Filter Accounts",
     "Filter Transaction Categories": "Filter Transaction Categories",
     "Filter Transaction Tags": "Filter Transaction Tags",
+    "Filter Account Tags": "Filter Account Tags",
     "Filter transaction description": "Filter transaction description",
     "User Settings": "User Settings",
     "User Profile": "User Profile",
@@ -2429,6 +2434,8 @@
     "Unable to unhide this tag": "Unable to unhide this tag",
     "Are you sure you want to delete this tag?": "Are you sure you want to delete this tag?",
     "Unable to delete this tag": "Unable to delete this tag",
+    "Show Hidden Account Tags": "Show Hidden Account Tags",
+    "Hide Hidden Account Tags": "Hide Hidden Account Tags",
     "Show Hidden Transaction Tags": "Show Hidden Transaction Tags",
     "Hide Hidden Transaction Tags": "Hide Hidden Transaction Tags",
     "Transaction Templates": "Transaction Templates",
@@ -2570,5 +2577,6 @@
     "Parameter Invalid": "Parameter Invalid",
     "Numeric Overflow": "Numeric Overflow",
     "Click to close": "Click to close",
-    "Create Nonexistent Accounts": "Create Nonexistent Accounts"
+    "Create Nonexistent Accounts": "Create Nonexistent Accounts",
+    "All Currencies": "All Currencies"
 }

@@ -446,7 +446,7 @@
                               :title="account.name"
                               :key="account.id"
                               v-for="account in allAccounts"
-                              v-show="(!account.hidden && (!allAccountsMap[account.parentId] || !allAccountsMap[account.parentId]!.hidden)) || queryAllFilterAccountIds[account.id]"
+                              v-show="!account.hidden || queryAllFilterAccountIds[account.id]"
                               @click="changeAccountFilter(account.id)"
                 >
                     <template #media>
@@ -688,7 +688,6 @@ const {
     showTagInTransactionListPage,
     allDateRanges,
     allAccounts,
-    allAccountsMap,
     allAvailableAccountsCount,
     allCategories,
     allPrimaryCategories,

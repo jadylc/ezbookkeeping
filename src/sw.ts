@@ -16,7 +16,7 @@ interface CacheTimestampEntry {
 }
 
 class DynamicExpirationPlugin implements WorkboxPlugin {
-    private static readonly SW_CACHE_TIME_HEADER: string = 'ezbookkeeping-sw-cache-time';
+    private static readonly SW_CACHE_TIME_HEADER: string = 'ezfinance-sw-cache-time';
     private maxEntries: number;
     private maxAgeMilliseconds: number;
     private cleaningCache: boolean = false;
@@ -174,9 +174,9 @@ interface MapCacheConfig {
 
 declare const self: ServiceWorkerGlobalScope;
 
-const SW_ASSETS_CACHE_NAME: string = 'ezbookkeeping-assets-cache';
-const SW_CODE_CACHE_NAME: string = 'ezbookkeeping-code-cache';
-const SW_MAP_CACHE_NAME: string = 'ezbookkeeping-map-cache';
+const SW_ASSETS_CACHE_NAME: string = 'ezfinance-assets-cache';
+const SW_CODE_CACHE_NAME: string = 'ezfinance-code-cache';
+const SW_MAP_CACHE_NAME: string = 'ezfinance-map-cache';
 
 const SW_MESSAGE_TYPE_UPDATE_MAP_CACHE_CONFIG: string = 'UPDATE_MAP_CACHE_CONFIG';
 const SW_MESSAGE_TYPE_UPDATE_MAP_CACHE_CONFIG_RESPONSE: string = 'UPDATE_MAP_CACHE_CONFIG_RESPONSE';

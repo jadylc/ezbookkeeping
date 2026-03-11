@@ -4,6 +4,7 @@ import { defineStore } from 'pinia';
 import { useSettingsStore } from './setting.ts';
 import { useUserStore } from './user.ts';
 import { useExchangeRatesStore } from './exchangeRates.ts';
+import { useAccountTagsStore } from './accountTag.ts';
 
 import { type BeforeResolveFunction, itemAndIndex, reversed, entries, values } from '@/core/base.ts';
 import type { HiddenAmount, NumberWithSuffix } from '@/core/numeral.ts';
@@ -27,76 +28,18 @@ export const useAccountsStore = defineStore('accounts', () => {
     const settingsStore = useSettingsStore();
     const userStore = useUserStore();
     const exchangeRatesStore = useExchangeRatesStore();
+    const accountTagsStore = useAccountTagsStore();
 
     const allAccounts = ref<Account[]>([]);
     const allAccountsMap = ref<Record<string, Account>>({});
     const allCategorizedAccountsMap = ref<Record<number, CategorizedAccount>>({});
     const accountListStateInvalid = ref<boolean>(true);
 
-    const allPlainAccounts = computed<Account[]>(() => {
-        const allAccountsList: Account[] = [];
+    const allPlainAccounts = computed<Account[]>(() => Account.sortAccounts([...allAccounts.value], settingsStore.accountCategoryDisplayOrders));
 
-        for (const account of allAccounts.value) {
-            if (account.type === AccountType.SingleAccount.type) {
-                allAccountsList.push(account);
-            } else if (account.type === AccountType.MultiSubAccounts.type) {
-                if (account.subAccounts) {
-                    for (const subAccount of account.subAccounts) {
-                        allAccountsList.push(subAccount);
-                    }
-                }
-            }
-        }
+    const allMixedPlainAccounts = computed<Account[]>(() => Account.sortAccounts([...allAccounts.value], settingsStore.accountCategoryDisplayOrders));
 
-        return Account.sortAccounts(allAccountsList, settingsStore.accountCategoryDisplayOrders, allAccountsMap.value);
-    });
-
-    const allMixedPlainAccounts = computed<Account[]>(() => {
-        const allAccountsList: Account[] = [];
-
-        for (const account of allAccounts.value) {
-            if (account.type === AccountType.SingleAccount.type) {
-                allAccountsList.push(account);
-            } else if (account.type === AccountType.MultiSubAccounts.type) {
-                allAccountsList.push(account);
-
-                if (account.subAccounts) {
-                    for (const subAccount of account.subAccounts) {
-                        allAccountsList.push(subAccount);
-                    }
-                }
-            }
-        }
-
-        return Account.sortAccounts(allAccountsList, settingsStore.accountCategoryDisplayOrders, allAccountsMap.value);
-    });
-
-    const allVisiblePlainAccounts = computed<Account[]>(() => {
-        const allVisibleAccounts: Account[] = [];
-
-        for (const account of allAccounts.value) {
-            if (account.hidden) {
-                continue;
-            }
-
-            if (account.type === AccountType.SingleAccount.type) {
-                allVisibleAccounts.push(account);
-            } else if (account.type === AccountType.MultiSubAccounts.type) {
-                if (account.subAccounts) {
-                    for (const subAccount of account.subAccounts) {
-
-                        if (subAccount.hidden) {
-                            continue;
-                        }
-
-                        allVisibleAccounts.push(subAccount);
-                    }
-                }
-            }
-        }
-
-        return Account.sortAccounts(allVisibleAccounts, settingsStore.accountCategoryDisplayOrders, allAccountsMap.value);
-    });
+    const allVisiblePlainAccounts = computed<Account[]>(() => Account.sortAccounts(allAccounts.value.filter(account => !account.hidden), settingsStore.accountCategoryDisplayOrders));
 
     const allAvailableAccountsCount = computed<number>(() => {
         let allAccountCount = 0;
@@ -144,12 +87,6 @@ export const useAccountsStore = defineStore('accounts', () => {
 
         for (const account of accounts) {
             allAccountsMap.value[account.id] = account;
-
-            if (account.subAccounts) {
-                for (const subAccount of account.subAccounts) {
-                    allAccountsMap.value[subAccount.id] = subAccount;
-                }
-            }
         }
 
         allCategorizedAccountsMap.value = getCategorizedAccountsMap(accounts);
@@ -176,12 +113,6 @@ export const useAccountsStore = defineStore('accounts', () => {
 
         allAccountsMap.value[currentAccount.id] = currentAccount;
 
-        if (currentAccount.subAccounts) {
-            for (const subAccount of currentAccount.subAccounts) {
-                allAccountsMap.value[subAccount.id] = subAccount;
-            }
-        }
-
         if (allCategorizedAccountsMap.value[currentAccount.category]) {
             const accountList = allCategorizedAccountsMap.value[currentAccount.category]!.accounts;
             accountList.push(currentAccount);
@@ -198,21 +129,7 @@ export const useAccountsStore = defineStore('accounts', () => {
             }
         }
 
-        if (oldAccount.subAccounts) {
-            for (const subAccount of oldAccount.subAccounts) {
-                if (allAccountsMap.value[subAccount.id]) {
-                    delete allAccountsMap.value[subAccount.id];
-                }
-            }
-        }
-
         allAccountsMap.value[newAccount.id] = newAccount;
-
-        if (newAccount.subAccounts) {
-            for (const subAccount of newAccount.subAccounts) {
-                allAccountsMap.value[subAccount.id] = subAccount;
-            }
-        }
 
         if (allCategorizedAccountsMap.value[newAccount.category]) {
             const accountList = allCategorizedAccountsMap.value[newAccount.category]!.accounts;
@@ -280,16 +197,6 @@ export const useAccountsStore = defineStore('accounts', () => {
             }
         }
 
-        if (allAccountsMap.value[currentAccount.id] && allAccountsMap.value[currentAccount.id]!.subAccounts) {
-            const subAccounts = allAccountsMap.value[currentAccount.id]!.subAccounts as Account[];
-
-            for (const subAccount of subAccounts) {
-                if (allAccountsMap.value[subAccount.id]) {
-                    delete allAccountsMap.value[subAccount.id];
-                }
-            }
-        }
-
         if (allAccountsMap.value[currentAccount.id]) {
             delete allAccountsMap.value[currentAccount.id];
         }
@@ -301,46 +208,6 @@ export const useAccountsStore = defineStore('accounts', () => {
                 if (account.id === currentAccount.id) {
                     accountList.splice(index, 1);
                     break;
-                }
-            }
-        }
-    }
-
-    function removeSubAccountFromAccountList(currentSubAccount: Account): void {
-        for (const account of allAccounts.value) {
-            if (account.type !== AccountType.MultiSubAccounts.type || !account.subAccounts) {
-                continue;
-            }
-
-            const subAccounts = account.subAccounts as Account[];
-
-            for (const [subAccount, index] of itemAndIndex(subAccounts)) {
-                if (subAccount.id === currentSubAccount.id) {
-                    subAccounts.splice(index, 1);
-                    break;
-                }
-            }
-        }
-
-        if (allAccountsMap.value[currentSubAccount.id]) {
-            delete allAccountsMap.value[currentSubAccount.id];
-        }
-
-        if (allCategorizedAccountsMap.value[currentSubAccount.category]) {
-            const accountList = allCategorizedAccountsMap.value[currentSubAccount.category]!.accounts;
-
-            for (const account of accountList) {
-                if (account.type !== AccountType.MultiSubAccounts.type || !account.subAccounts) {
-                    continue;
-                }
-
-                const subAccounts = account.subAccounts as Account[];
-
-                for (const [subAccount, index] of itemAndIndex(subAccounts)) {
-                    if (subAccount.id === currentSubAccount.id) {
-                        subAccounts.splice(index, 1);
-                        break;
-                    }
                 }
             }
         }
@@ -359,8 +226,7 @@ export const useAccountsStore = defineStore('accounts', () => {
 
     function getFirstShowingIds(showHidden: boolean): AccountShowingIds {
         const ret: AccountShowingIds = {
-            accounts: {},
-            subAccounts: {}
+            accounts: {}
         };
 
         for (const [category, categorizedAccounts] of entries(allCategorizedAccountsMap.value)) {
@@ -371,15 +237,6 @@ export const useAccountsStore = defineStore('accounts', () => {
             const accounts = categorizedAccounts.accounts;
 
             for (const account of accounts) {
-                if (account.type === AccountType.MultiSubAccounts.type && account.subAccounts) {
-                    for (const subAccount of account.subAccounts) {
-                        if (showHidden || !subAccount.hidden) {
-                            ret.subAccounts[account.id] = subAccount.id;
-                            break;
-                        }
-                    }
-                }
-
                 if (showHidden || !account.hidden) {
                     ret.accounts[parseInt(category)] = account.id;
                     break;
@@ -392,8 +249,7 @@ export const useAccountsStore = defineStore('accounts', () => {
 
     function getLastShowingIds(showHidden: boolean): AccountShowingIds {
         const ret: AccountShowingIds = {
-            accounts: {},
-            subAccounts: {}
+            accounts: {}
         };
 
         for (const [category, categorizedAccounts] of entries(allCategorizedAccountsMap.value)) {
@@ -404,15 +260,6 @@ export const useAccountsStore = defineStore('accounts', () => {
             const accounts = categorizedAccounts.accounts;
 
             for (const account of reversed(accounts)) {
-                if (account.type === AccountType.MultiSubAccounts.type && account.subAccounts) {
-                    for (const subAccount of reversed(account.subAccounts)) {
-                        if (showHidden || !subAccount.hidden) {
-                            ret.subAccounts[account.id] = subAccount.id;
-                            break;
-                        }
-                    }
-                }
-
                 if (showHidden || !account.hidden) {
                     ret.accounts[parseInt(category)] = account.id;
                     break;
@@ -432,15 +279,7 @@ export const useAccountsStore = defineStore('accounts', () => {
         let mainAccount = null;
 
         for (const accountId of accountIds) {
-            let account = allAccountsMap.value[accountId];
-
-            if (!account) {
-                return null;
-            }
-
-            if (account.parentId !== '0') {
-                account = allAccountsMap.value[account.parentId];
-            }
+            const account = allAccountsMap.value[accountId];
 
             if (!account) {
                 return null;
@@ -468,22 +307,53 @@ export const useAccountsStore = defineStore('accounts', () => {
         return null;
     }
 
+    function getTotalAmountTargetCurrency(): string {
+        return settingsStore.appSettings.totalAmountTargetCurrency || userStore.currentUserDefaultCurrency;
+    }
+
+    function isAccountExcludedByTag(account: Account): boolean {
+        const excludeTagIds = settingsStore.appSettings.totalAmountExcludeAccountTagIds;
+
+        if (!excludeTagIds || Object.keys(excludeTagIds).length < 1) {
+            return false;
+        }
+
+        const accountTagNames = account.tags && account.tags.length ? account.tags : (account.tag ? [account.tag] : []);
+
+        for (const rawTagName of accountTagNames) {
+            const tagName = rawTagName?.trim();
+
+            if (!tagName) {
+                continue;
+            }
+
+            const tag = accountTagsStore.allAccountTagsNameMap[tagName];
+
+            if (tag && excludeTagIds[tag.id]) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     function getNetAssets(showAccountBalance: boolean): number | HiddenAmount | NumberWithSuffix {
         if (!showAccountBalance) {
             return DISPLAY_HIDDEN_AMOUNT;
         }
 
+        const targetCurrency = getTotalAmountTargetCurrency();
         const accountsBalance = getAllFilteredAccountsBalance(allCategorizedAccountsMap.value, settingsStore.appSettings.accountCategoryOrders,
-                account => !(account.type === AccountType.SingleAccount.type && settingsStore.appSettings.totalAmountExcludeAccountIds[account.id])
+                account => !(account.type === AccountType.SingleAccount.type && settingsStore.appSettings.totalAmountExcludeAccountIds[account.id]) && !isAccountExcludedByTag(account)
         );
         let netAssets = 0;
         let hasUnCalculatedAmount = false;
 
         for (const accountBalance of accountsBalance) {
-            if (accountBalance.currency === userStore.currentUserDefaultCurrency) {
+            if (accountBalance.currency === targetCurrency) {
                 netAssets += accountBalance.balance;
             } else {
-                const balance = exchangeRatesStore.getExchangedAmount(accountBalance.balance, accountBalance.currency, userStore.currentUserDefaultCurrency);
+                const balance = exchangeRatesStore.getExchangedAmount(accountBalance.balance, accountBalance.currency, targetCurrency);
 
                 if (!isNumber(balance)) {
                     hasUnCalculatedAmount = true;
@@ -504,22 +374,51 @@ export const useAccountsStore = defineStore('accounts', () => {
         }
     }
 
+    function getNetAssetsByCurrency(showAccountBalance: boolean): Record<string, number | HiddenAmount> {
+        const accountsBalance = getAllFilteredAccountsBalance(allCategorizedAccountsMap.value, settingsStore.appSettings.accountCategoryOrders,
+                account => !(account.type === AccountType.SingleAccount.type && settingsStore.appSettings.totalAmountExcludeAccountIds[account.id]) && !isAccountExcludedByTag(account)
+        );
+        const ret: Record<string, number | HiddenAmount> = {};
+
+        for (const accountBalance of accountsBalance) {
+            const currency = accountBalance.currency;
+
+            if (!currency) {
+                continue;
+            }
+
+            if (!showAccountBalance) {
+                ret[currency] = DISPLAY_HIDDEN_AMOUNT;
+                continue;
+            }
+
+            if (!isNumber(ret[currency])) {
+                ret[currency] = 0;
+            }
+
+            ret[currency] = (ret[currency] as number) + accountBalance.balance;
+        }
+
+        return ret;
+    }
+
     function getTotalAssets(showAccountBalance: boolean): number | HiddenAmount | NumberWithSuffix {
         if (!showAccountBalance) {
             return DISPLAY_HIDDEN_AMOUNT;
         }
 
+        const targetCurrency = getTotalAmountTargetCurrency();
         const accountsBalance = getAllFilteredAccountsBalance(allCategorizedAccountsMap.value, settingsStore.appSettings.accountCategoryOrders,
-                account => (account.isAsset || false) && !(account.type === AccountType.SingleAccount.type && settingsStore.appSettings.totalAmountExcludeAccountIds[account.id])
+                account => (account.isAsset || false) && !(account.type === AccountType.SingleAccount.type && settingsStore.appSettings.totalAmountExcludeAccountIds[account.id]) && !isAccountExcludedByTag(account)
         );
         let totalAssets = 0;
         let hasUnCalculatedAmount = false;
 
         for (const accountBalance of accountsBalance) {
-            if (accountBalance.currency === userStore.currentUserDefaultCurrency) {
+            if (accountBalance.currency === targetCurrency) {
                 totalAssets += accountBalance.balance;
             } else {
-                const balance = exchangeRatesStore.getExchangedAmount(accountBalance.balance, accountBalance.currency, userStore.currentUserDefaultCurrency);
+                const balance = exchangeRatesStore.getExchangedAmount(accountBalance.balance, accountBalance.currency, targetCurrency);
 
                 if (!isNumber(balance)) {
                     hasUnCalculatedAmount = true;
@@ -540,22 +439,51 @@ export const useAccountsStore = defineStore('accounts', () => {
         }
     }
 
+    function getTotalAssetsByCurrency(showAccountBalance: boolean): Record<string, number | HiddenAmount> {
+        const accountsBalance = getAllFilteredAccountsBalance(allCategorizedAccountsMap.value, settingsStore.appSettings.accountCategoryOrders,
+                account => (account.isAsset || false) && !(account.type === AccountType.SingleAccount.type && settingsStore.appSettings.totalAmountExcludeAccountIds[account.id]) && !isAccountExcludedByTag(account)
+        );
+        const ret: Record<string, number | HiddenAmount> = {};
+
+        for (const accountBalance of accountsBalance) {
+            const currency = accountBalance.currency;
+
+            if (!currency) {
+                continue;
+            }
+
+            if (!showAccountBalance) {
+                ret[currency] = DISPLAY_HIDDEN_AMOUNT;
+                continue;
+            }
+
+            if (!isNumber(ret[currency])) {
+                ret[currency] = 0;
+            }
+
+            ret[currency] = (ret[currency] as number) + accountBalance.balance;
+        }
+
+        return ret;
+    }
+
     function getTotalLiabilities(showAccountBalance: boolean): number | HiddenAmount | NumberWithSuffix {
         if (!showAccountBalance) {
             return DISPLAY_HIDDEN_AMOUNT;
         }
 
+        const targetCurrency = getTotalAmountTargetCurrency();
         const accountsBalance = getAllFilteredAccountsBalance(allCategorizedAccountsMap.value, settingsStore.appSettings.accountCategoryOrders,
-                account => (account.isLiability || false) && !(account.type === AccountType.SingleAccount.type && settingsStore.appSettings.totalAmountExcludeAccountIds[account.id])
+                account => (account.isLiability || false) && !(account.type === AccountType.SingleAccount.type && settingsStore.appSettings.totalAmountExcludeAccountIds[account.id]) && !isAccountExcludedByTag(account)
         );
         let totalLiabilities = 0;
         let hasUnCalculatedAmount = false;
 
         for (const accountBalance of accountsBalance) {
-            if (accountBalance.currency === userStore.currentUserDefaultCurrency) {
+            if (accountBalance.currency === targetCurrency) {
                 totalLiabilities -= accountBalance.balance;
             } else {
-                const balance = exchangeRatesStore.getExchangedAmount(accountBalance.balance, accountBalance.currency, userStore.currentUserDefaultCurrency);
+                const balance = exchangeRatesStore.getExchangedAmount(accountBalance.balance, accountBalance.currency, targetCurrency);
 
                 if (!isNumber(balance)) {
                     hasUnCalculatedAmount = true;
@@ -576,18 +504,47 @@ export const useAccountsStore = defineStore('accounts', () => {
         }
     }
 
+    function getTotalLiabilitiesByCurrency(showAccountBalance: boolean): Record<string, number | HiddenAmount> {
+        const accountsBalance = getAllFilteredAccountsBalance(allCategorizedAccountsMap.value, settingsStore.appSettings.accountCategoryOrders,
+                account => (account.isLiability || false) && !(account.type === AccountType.SingleAccount.type && settingsStore.appSettings.totalAmountExcludeAccountIds[account.id]) && !isAccountExcludedByTag(account)
+        );
+        const ret: Record<string, number | HiddenAmount> = {};
+
+        for (const accountBalance of accountsBalance) {
+            const currency = accountBalance.currency;
+
+            if (!currency) {
+                continue;
+            }
+
+            if (!showAccountBalance) {
+                ret[currency] = DISPLAY_HIDDEN_AMOUNT;
+                continue;
+            }
+
+            if (!isNumber(ret[currency])) {
+                ret[currency] = 0;
+            }
+
+            ret[currency] = (ret[currency] as number) - accountBalance.balance;
+        }
+
+        return ret;
+    }
+
     function getAccountCategoryTotalBalance(showAccountBalance: boolean, accountCategory: AccountCategory): number | HiddenAmount | NumberWithSuffix {
         if (!showAccountBalance) {
             return DISPLAY_HIDDEN_AMOUNT;
         }
 
+        const targetCurrency = getTotalAmountTargetCurrency();
         const accountsBalance = getAllFilteredAccountsBalance(allCategorizedAccountsMap.value, settingsStore.appSettings.accountCategoryOrders,
                 account => account.category === accountCategory.type);
         let totalBalance = 0;
         let hasUnCalculatedAmount = false;
 
         for (const accountBalance of accountsBalance) {
-            if (accountBalance.currency === userStore.currentUserDefaultCurrency) {
+            if (accountBalance.currency === targetCurrency) {
                 if (accountBalance.isAsset) {
                     totalBalance += accountBalance.balance;
                 } else if (accountBalance.isLiability) {
@@ -596,7 +553,7 @@ export const useAccountsStore = defineStore('accounts', () => {
                     totalBalance += accountBalance.balance;
                 }
             } else {
-                const balance = exchangeRatesStore.getExchangedAmount(accountBalance.balance, accountBalance.currency, userStore.currentUserDefaultCurrency);
+                const balance = exchangeRatesStore.getExchangedAmount(accountBalance.balance, accountBalance.currency, targetCurrency);
 
                 if (!isNumber(balance)) {
                     hasUnCalculatedAmount = true;
@@ -641,100 +598,16 @@ export const useAccountsStore = defineStore('accounts', () => {
         }
     }
 
-    function getAccountSubAccountBalance(showAccountBalance: boolean, showHidden: boolean, account: Account, subAccountId?: string): AccountDisplayBalance | null {
-        if (account.type !== AccountType.MultiSubAccounts.type) {
+    function getAccountSubAccountBalance(showAccountBalance: boolean, account: Account): AccountDisplayBalance | null {
+        const balance = getAccountBalance(showAccountBalance, account);
+
+        if (balance === null) {
             return null;
         }
-
-        let resultCurrency = userStore.currentUserDefaultCurrency;
-
-        if (!account.subAccounts || !account.subAccounts.length) {
-            return {
-                balance: showAccountBalance ? 0 : DISPLAY_HIDDEN_AMOUNT,
-                currency: resultCurrency
-            };
-        }
-
-        const allSubAccountCurrenciesMap: Record<string, boolean> = {};
-        const allSubAccountCurrencies: string[] = [];
-        let totalBalance = 0;
-
-        for (const subAccount of account.subAccounts) {
-            if (!showHidden && subAccount.hidden) {
-                continue;
-            }
-
-            if (!allSubAccountCurrenciesMap[subAccount.currency]) {
-                allSubAccountCurrenciesMap[subAccount.currency] = true;
-                allSubAccountCurrencies.push(subAccount.currency);
-            }
-        }
-
-        if (allSubAccountCurrencies.length === 0) {
-            return {
-                balance: showAccountBalance ? 0 : DISPLAY_HIDDEN_AMOUNT,
-                currency: resultCurrency
-            };
-        }
-
-        if (allSubAccountCurrencies.length === 1) {
-            resultCurrency = allSubAccountCurrencies[0] as string;
-        }
-
-        let hasUnCalculatedAmount = false;
-
-        for (const subAccount of account.subAccounts) {
-            if (!showHidden && subAccount.hidden) {
-                continue;
-            }
-
-            if (subAccountId) {
-                if (subAccountId === subAccount.id) {
-                    return {
-                        balance: showAccountBalance ? getAccountBalance(showAccountBalance, subAccount) as number : DISPLAY_HIDDEN_AMOUNT,
-                        currency: subAccount.currency
-                    };
-                }
-            }
-
-            if (subAccount.currency === resultCurrency) {
-                if (subAccount.isAsset) {
-                    totalBalance += subAccount.balance;
-                } else if (subAccount.isLiability) {
-                    totalBalance -= subAccount.balance;
-                } else {
-                    totalBalance += subAccount.balance;
-                }
-            } else {
-                const balance = exchangeRatesStore.getExchangedAmount(subAccount.balance, subAccount.currency, resultCurrency);
-
-                if (!isNumber(balance)) {
-                    hasUnCalculatedAmount = true;
-                    continue;
-                }
-
-                if (subAccount.isAsset) {
-                    totalBalance += Math.trunc(balance);
-                } else if (subAccount.isLiability) {
-                    totalBalance -= Math.trunc(balance);
-                } else {
-                    totalBalance += Math.trunc(balance);
-                }
-            }
-        }
-
-        if (subAccountId) { // not found specified id in sub accounts
-            return null;
-        }
-
-        const displayTotalBalance: NumberWithSuffix = {
-            value: totalBalance,
-            suffix: hasUnCalculatedAmount ? INCOMPLETE_AMOUNT_SUFFIX : ''
-        };
 
         return {
-            balance: showAccountBalance ? displayTotalBalance : DISPLAY_HIDDEN_AMOUNT,
-            currency: resultCurrency
+            balance,
+            currency: account.currency
         };
     }
 
@@ -756,17 +629,7 @@ export const useAccountsStore = defineStore('accounts', () => {
         return shownCount > 0;
     }
 
-    function hasVisibleSubAccount(showHidden: boolean, account: Account): boolean {
-        if (!account || account.type !== AccountType.MultiSubAccounts.type || !account.subAccounts) {
-            return false;
-        }
-
-        for (const subAccount of account.subAccounts) {
-            if (showHidden || !subAccount.hidden) {
-                return true;
-            }
-        }
-
+    function hasVisibleSubAccount(): boolean {
         return false;
     }
 
@@ -849,15 +712,15 @@ export const useAccountsStore = defineStore('accounts', () => {
         });
     }
 
-    function saveAccount({ account, subAccounts, isEdit, clientSessionId }: { account: Account, subAccounts: Account[], isEdit: boolean, clientSessionId: string }): Promise<Account> {
+    function saveAccount({ account, isEdit, clientSessionId }: { account: Account, isEdit: boolean, clientSessionId: string }): Promise<Account> {
         return new Promise((resolve, reject) => {
             const oldAccount = isEdit ? allAccountsMap.value[account.id] : null;
             let promise = null;
 
             if (!isEdit) {
-                promise = services.addAccount(account.toCreateRequest(clientSessionId, subAccounts));
+                promise = services.addAccount(account.toCreateRequest(clientSessionId));
             } else {
-                promise = services.modifyAccount(account.toModifyRequest(clientSessionId, subAccounts));
+                promise = services.modifyAccount(account.toModifyRequest(clientSessionId));
             }
 
             promise.then(response => {
@@ -1043,41 +906,6 @@ export const useAccountsStore = defineStore('accounts', () => {
         });
     }
 
-    function deleteSubAccount({ subAccount, beforeResolve }: { subAccount: Account, beforeResolve?: BeforeResolveFunction }): Promise<boolean> {
-        return new Promise((resolve, reject) => {
-            services.deleteSubAccount({
-                id: subAccount.id
-            }).then(response => {
-                const data = response.data;
-
-                if (!data || !data.success || !data.result) {
-                    reject({ message: 'Unable to delete this sub-account' });
-                    return;
-                }
-
-                if (beforeResolve) {
-                    beforeResolve(() => {
-                        removeSubAccountFromAccountList(subAccount);
-                    });
-                } else {
-                    removeSubAccountFromAccountList(subAccount);
-                }
-
-                resolve(data.result);
-            }).catch(error => {
-                logger.error('failed to delete sub-account', error);
-
-                if (error.response && error.response.data && error.response.data.errorMessage) {
-                    reject({ error: error.response.data });
-                } else if (!error.processed) {
-                    reject({ message: 'Unable to delete this sub-account' });
-                } else {
-                    reject(error);
-                }
-            });
-        });
-    }
-
     return {
         // states
         allAccounts,
@@ -1097,9 +925,13 @@ export const useAccountsStore = defineStore('accounts', () => {
         getFirstShowingIds,
         getLastShowingIds,
         getAccountStatementDate,
+        getTotalAmountTargetCurrency,
         getNetAssets,
+        getNetAssetsByCurrency,
         getTotalAssets,
+        getTotalAssetsByCurrency,
         getTotalLiabilities,
+        getTotalLiabilitiesByCurrency,
         getAccountCategoryTotalBalance,
         getAccountBalance,
         getAccountSubAccountBalance,
@@ -1111,7 +943,6 @@ export const useAccountsStore = defineStore('accounts', () => {
         changeAccountDisplayOrder,
         updateAccountDisplayOrders,
         hideAccount,
-        deleteAccount,
-        deleteSubAccount
+        deleteAccount
     }
 });

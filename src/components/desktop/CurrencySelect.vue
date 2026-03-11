@@ -38,6 +38,7 @@ import { computed } from 'vue';
 import { useI18n } from '@/locales/helpers.ts';
 
 import type { LocalizedCurrencyInfo } from '@/core/currency.ts';
+import { matchSearchText } from '@/lib/search.ts';
 
 import {
     mdiCheck
@@ -80,7 +81,7 @@ function filterCurrency(value: string, query: string, item?: { value: unknown, r
         return true;
     }
 
-    return item.raw.displayName.toLowerCase().indexOf(lowerCaseFilterContent) >= 0
+    return matchSearchText(item.raw.displayName, query)
         || item.raw.currencyCode.toLowerCase().indexOf(lowerCaseFilterContent) >= 0;
 }
 </script>

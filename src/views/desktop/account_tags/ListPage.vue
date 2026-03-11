@@ -1,0 +1,525 @@
+<template>
+    <v-row class="match-height">
+        <v-col cols="12">
+            <v-card>
+                <v-card-text class="pb-0">
+                    <span class="text-subtitle-2">{{ tt('Total tags') }}</span>
+                    <p class="transaction-tags-statistic-item-value mt-1">
+                        <span v-if="!loading || totalAvailableTagsCount > 0">{{ displayTotalAvailableTagsCount }}</span>
+                        <span v-else-if="loading && totalAvailableTagsCount <= 0">
+                            <v-skeleton-loader class="skeleton-no-margin pt-2 pb-1" type="text" :loading="true"></v-skeleton-loader>
+                        </span>
+                    </p>
+                </v-card-text>
+                <v-divider />
+                <v-card variant="flat" min-height="780">
+                    <template #title>
+                        <div class="title-and-toolbar d-flex align-center">
+                            <span>{{ tt('Account Tags') }}</span>
+                            <v-btn class="ms-3" color="default" variant="outlined"
+                                   :disabled="loading || updating || hasEditingTag" @click="add">{{ tt('Add') }}</v-btn>
+                            <v-btn class="ms-3" color="primary" variant="tonal"
+                                   :disabled="loading || updating || hasEditingTag" @click="saveSortResult"
+                                   v-if="displayOrderModified">{{ tt('Save Display Order') }}</v-btn>
+                            <v-btn density="compact" color="default" variant="text" size="24"
+                                   class="ms-2" :icon="true" :disabled="loading || updating || hasEditingTag"
+                                   :loading="loading" @click="reload">
+                                <template #loader>
+                                    <v-progress-circular indeterminate size="20"/>
+                                </template>
+                                <v-icon :icon="mdiRefresh" size="24" />
+                                <v-tooltip activator="parent">{{ tt('Refresh') }}</v-tooltip>
+                            </v-btn>
+                            <v-spacer/>
+                            <v-btn density="comfortable" color="default" variant="text" class="ms-2"
+                                   :disabled="loading || updating || hasEditingTag" :icon="true">
+                                <v-icon :icon="mdiDotsVertical" />
+                                <v-menu activator="parent">
+                                    <v-list>
+                                        <v-list-item :prepend-icon="mdiSortAlphabeticalAscending"
+                                                     :disabled="!tags || tags.length < 2"
+                                                     :title="tt('Sort by Name (A to Z)')"
+                                                     @click="sortByName(false)"></v-list-item>
+                                        <v-list-item :prepend-icon="mdiSortAlphabeticalDescending"
+                                                     :disabled="!tags || tags.length < 2"
+                                                     :title="tt('Sort by Name (Z to A)')"
+                                                     @click="sortByName(true)"></v-list-item>
+                                        <v-divider class="my-2"/>
+                                        <v-list-item :prepend-icon="mdiEyeOutline"
+                                                     :title="tt('Show Hidden Account Tags')"
+                                                     v-if="!showHidden" @click="showHidden = true"></v-list-item>
+                                        <v-list-item :prepend-icon="mdiEyeOffOutline"
+                                                     :title="tt('Hide Hidden Account Tags')"
+                                                     v-if="showHidden" @click="showHidden = false"></v-list-item>
+                                    </v-list>
+                                </v-menu>
+                            </v-btn>
+                        </div>
+                    </template>
+
+                    <v-table class="transaction-tags-table table-striped" :hover="!loading">
+                        <thead>
+                        <tr>
+                            <th>
+                                <div class="d-flex align-center">
+                                    <span>{{ tt('Tag Title') }}</span>
+                                    <v-spacer/>
+                                    <span>{{ tt('Operation') }}</span>
+                                </div>
+                            </th>
+                        </tr>
+                        </thead>
+
+                        <tbody v-if="loading && noAvailableTag && !newTag">
+                        <tr :key="itemIdx" v-for="itemIdx in [ 1, 2, 3, 4, 5 ]">
+                            <td class="px-0">
+                                <v-skeleton-loader type="text" :loading="true"></v-skeleton-loader>
+                            </td>
+                        </tr>
+                        </tbody>
+
+                        <tbody v-if="!loading && noAvailableTag && !newTag">
+                        <tr>
+                            <td>{{ tt('No available tag') }}</td>
+                        </tr>
+                        </tbody>
+
+                        <draggable-list tag="tbody"
+                                        item-key="id"
+                                        handle=".drag-handle"
+                                        ghost-class="dragging-item"
+                                        :class="{ 'has-bottom-border': newTag }"
+                                        :disabled="noAvailableTag"
+                                        v-model="tags"
+                                        @change="onMove">
+                            <template #item="{ element }">
+                                <tr class="transaction-tags-table-row-tag text-sm" v-if="showHidden || !element.hidden">
+                                    <td>
+                                        <div class="d-flex align-center">
+                                            <div class="d-flex align-center" v-if="editingTag.id !== element.id">
+                                                <v-badge class="right-bottom-icon" color="secondary"
+                                                         location="bottom right" offset-x="8" :icon="mdiEyeOffOutline"
+                                                         v-if="element.hidden">
+                                                    <v-icon size="20" start :icon="mdiPound"/>
+                                                </v-badge>
+                                                <v-icon size="20" start :icon="mdiPound" v-else-if="!element.hidden"/>
+                                                <span class="transaction-tag-name">{{ element.name }}</span>
+                                            </div>
+
+                                            <v-text-field class="w-100 me-2" type="text"
+                                                          density="compact" variant="underlined"
+                                                          :disabled="loading || updating"
+                                                          :placeholder="tt('Tag Title')"
+                                                          v-model="editingTag.name"
+                                                          v-else-if="editingTag.id === element.id"
+                                                          @keyup.enter="save(editingTag)">
+                                                <template #prepend>
+                                                    <v-badge class="right-bottom-icon" color="secondary"
+                                                             location="bottom right" offset-x="8" :icon="mdiEyeOffOutline"
+                                                             v-if="element.hidden">
+                                                        <v-icon size="20" start :icon="mdiPound"/>
+                                                    </v-badge>
+                                                    <v-icon size="20" start :icon="mdiPound" v-else-if="!element.hidden"/>
+                                                </template>
+                                            </v-text-field>
+
+                                            <v-spacer/>
+
+                                            <v-btn class="px-2 ms-2" color="default"
+                                                   density="comfortable" variant="text"
+                                                   :class="{ 'd-none': loading, 'hover-display': !loading }"
+                                                   :prepend-icon="element.hidden ? mdiEyeOutline : mdiEyeOffOutline"
+                                                   :loading="tagHiding[element.id]"
+                                                   :disabled="loading || updating"
+                                                   v-if="editingTag.id !== element.id"
+                                                   @click="hide(element, !element.hidden)">
+                                                <template #loader>
+                                                    <v-progress-circular indeterminate size="20" width="2"/>
+                                                </template>
+                                                {{ element.hidden ? tt('Show') : tt('Hide') }}
+                                            </v-btn>
+                                            <v-btn class="px-2" color="default"
+                                                   density="comfortable" variant="text"
+                                                   :class="{ 'd-none': loading, 'hover-display': !loading }"
+                                                   :prepend-icon="mdiPencilOutline"
+                                                   :loading="tagUpdating[element.id]"
+                                                   :disabled="loading || updating"
+                                                   v-if="editingTag.id !== element.id"
+                                                   @click="edit(element)">
+                                                <template #loader>
+                                                    <v-progress-circular indeterminate size="20" width="2"/>
+                                                </template>
+                                                {{ tt('Edit') }}
+                                            </v-btn>
+                                            <v-btn class="px-2" color="default"
+                                                   density="comfortable" variant="text"
+                                                   :class="{ 'd-none': loading, 'hover-display': !loading }"
+                                                   :prepend-icon="mdiDeleteOutline"
+                                                   :loading="tagRemoving[element.id]"
+                                                   :disabled="loading || updating"
+                                                   v-if="editingTag.id !== element.id"
+                                                   @click="remove(element)">
+                                                <template #loader>
+                                                    <v-progress-circular indeterminate size="20" width="2"/>
+                                                </template>
+                                                {{ tt('Delete') }}
+                                            </v-btn>
+                                            <v-btn class="px-2"
+                                                   density="comfortable" variant="text"
+                                                   :prepend-icon="mdiCheck"
+                                                   :loading="tagUpdating[element.id]"
+                                                   :disabled="loading || updating || !isTagModified(element)"
+                                                   v-if="editingTag.id === element.id" @click="save(editingTag)">
+                                                <template #loader>
+                                                    <v-progress-circular indeterminate size="20" width="2"/>
+                                                </template>
+                                                {{ tt('Save') }}
+                                            </v-btn>
+                                            <v-btn class="px-2" color="default"
+                                                   density="comfortable" variant="text"
+                                                   :prepend-icon="mdiClose"
+                                                   :disabled="loading || updating"
+                                                   v-if="editingTag.id === element.id" @click="cancelSave(editingTag)">
+                                                {{ tt('Cancel') }}
+                                            </v-btn>
+                                            <span class="ms-2">
+                                                <v-icon :class="!loading && !updating && !hasEditingTag && availableTagCount > 1 ? 'drag-handle' : 'disabled'"
+                                                        :icon="mdiDrag"/>
+                                                <v-tooltip activator="parent" v-if="!loading && !updating && !hasEditingTag && availableTagCount > 1">{{ tt('Drag to Reorder') }}</v-tooltip>
+                                            </span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </template>
+                        </draggable-list>
+
+                        <tbody v-if="newTag">
+                        <tr class="text-sm" :class="{ 'even-row': (availableTagCount & 1) === 1}">
+                            <td>
+                                <div class="d-flex align-center">
+                                    <v-text-field class="w-100 me-2" type="text" color="primary"
+                                                  density="compact" variant="underlined"
+                                                  :disabled="loading || updating" :placeholder="tt('Tag Title')"
+                                                  v-model="newTag.name" @keyup.enter="save(newTag)">
+                                        <template #prepend>
+                                            <v-icon size="20" start :icon="mdiPound"/>
+                                        </template>
+                                    </v-text-field>
+
+                                    <v-spacer/>
+
+                                    <v-btn class="px-2" density="comfortable" variant="text"
+                                           :prepend-icon="mdiCheck"
+                                           :loading="tagUpdating['']"
+                                           :disabled="loading || updating || !isTagModified(newTag)"
+                                           @click="save(newTag)">
+                                        <template #loader>
+                                            <v-progress-circular indeterminate size="20" width="2"/>
+                                        </template>
+                                        {{ tt('Save') }}
+                                    </v-btn>
+                                    <v-btn class="px-2" color="default"
+                                           density="comfortable" variant="text"
+                                           :prepend-icon="mdiClose"
+                                           :disabled="loading || updating"
+                                           @click="cancelSave(newTag)">
+                                        {{ tt('Cancel') }}
+                                    </v-btn>
+                                    <span class="ms-2">
+                                        <v-icon class="disabled" :icon="mdiDrag"/>
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </v-table>
+                </v-card>
+            </v-card>
+        </v-col>
+    </v-row>
+
+    <confirm-dialog ref="confirmDialog"/>
+    <snack-bar ref="snackbar" />
+</template>
+
+<script setup lang="ts">
+import ConfirmDialog from '@/components/desktop/ConfirmDialog.vue';
+import SnackBar from '@/components/desktop/SnackBar.vue';
+
+import { ref, computed, useTemplateRef } from 'vue';
+
+import { useI18n } from '@/locales/helpers.ts';
+import { useAccountTagListPageBase } from '@/views/base/tags/AccountTagListPageBase.ts';
+
+import { useAccountTagsStore } from '@/stores/accountTag.ts';
+
+import { AccountTag } from '@/models/account_tag.ts';
+
+import { getAvailableAccountTagCount } from '@/lib/account_tag.ts';
+
+import {
+    mdiRefresh,
+    mdiPencilOutline,
+    mdiCheck,
+    mdiClose,
+    mdiSortAlphabeticalAscending,
+    mdiSortAlphabeticalDescending,
+    mdiEyeOffOutline,
+    mdiEyeOutline,
+    mdiDeleteOutline,
+    mdiDrag,
+    mdiDotsVertical,
+    mdiPound
+} from '@mdi/js';
+
+type ConfirmDialogType = InstanceType<typeof ConfirmDialog>;
+type SnackBarType = InstanceType<typeof SnackBar>;
+
+const { tt, formatNumberToLocalizedNumerals } = useI18n();
+
+const {
+    newTag,
+    editingTag,
+    loading,
+    showHidden,
+    displayOrderModified,
+    tags,
+    noAvailableTag,
+    hasEditingTag,
+    isTagModified,
+    add,
+    edit
+} = useAccountTagListPageBase();
+
+const accountTagsStore = useAccountTagsStore();
+
+const confirmDialog = useTemplateRef<ConfirmDialogType>('confirmDialog');
+const snackbar = useTemplateRef<SnackBarType>('snackbar');
+
+const updating = ref<boolean>(false);
+const tagUpdating = ref<Record<string, boolean>>({});
+const tagHiding = ref<Record<string, boolean>>({});
+const tagRemoving = ref<Record<string, boolean>>({});
+
+const totalAvailableTagsCount = computed<number>(() => accountTagsStore.allAvailableTagsCount);
+const displayTotalAvailableTagsCount = computed<string>(() => formatNumberToLocalizedNumerals(accountTagsStore.allAvailableTagsCount));
+const availableTagCount = computed<number>(() => getAvailableAccountTagCount(tags.value, showHidden.value));
+
+function reload(): void {
+    if (hasEditingTag.value) {
+        return;
+    }
+
+    loading.value = true;
+
+    accountTagsStore.loadAllTags({
+        force: true
+    }).then(() => {
+        loading.value = false;
+        displayOrderModified.value = false;
+
+        snackbar.value?.showMessage('Tag list has been updated');
+    }).catch(error => {
+        loading.value = false;
+
+        if (error && error.isUpToDate) {
+            displayOrderModified.value = false;
+        }
+
+        if (!error.processed) {
+            snackbar.value?.showError(error);
+        }
+    });
+}
+
+function save(tag: AccountTag): void {
+    updating.value = true;
+    tagUpdating.value[tag.id || ''] = true;
+
+    accountTagsStore.saveTag({
+        tag: tag
+    }).then(() => {
+        updating.value = false;
+        tagUpdating.value[tag.id || ''] = false;
+
+        if (tag.id) {
+            editingTag.value.id = '';
+            editingTag.value.name = '';
+        } else {
+            newTag.value = null;
+        }
+    }).catch(error => {
+        updating.value = false;
+        tagUpdating.value[tag.id || ''] = false;
+
+        if (!error.processed) {
+            snackbar.value?.showError(error);
+        }
+    });
+}
+
+function cancelSave(tag: AccountTag): void {
+    if (tag.id) {
+        editingTag.value.id = '';
+        editingTag.value.name = '';
+    } else {
+        newTag.value = null;
+    }
+}
+
+function sortByName(desc: boolean): void {
+    const changed = accountTagsStore.sortTagDisplayOrderByTagName(desc);
+
+    if (changed) {
+        displayOrderModified.value = true;
+    }
+}
+
+function saveSortResult(): void {
+    if (!displayOrderModified.value) {
+        return;
+    }
+
+    loading.value = true;
+
+    accountTagsStore.updateTagDisplayOrders().then(() => {
+        loading.value = false;
+        displayOrderModified.value = false;
+    }).catch(error => {
+        loading.value = false;
+
+        if (!error.processed) {
+            snackbar.value?.showError(error);
+        }
+    });
+}
+
+function hide(tag: AccountTag, hidden: boolean): void {
+    updating.value = true;
+    tagHiding.value[tag.id] = true;
+
+    accountTagsStore.hideTag({
+        tag: tag,
+        hidden: hidden
+    }).then(() => {
+        updating.value = false;
+        tagHiding.value[tag.id] = false;
+    }).catch(error => {
+        updating.value = false;
+        tagHiding.value[tag.id] = false;
+
+        if (!error.processed) {
+            snackbar.value?.showError(error);
+        }
+    });
+}
+
+function remove(tag: AccountTag): void {
+    confirmDialog.value?.open('Are you sure you want to delete this tag?').then(() => {
+        updating.value = true;
+        tagRemoving.value[tag.id] = true;
+
+        accountTagsStore.deleteTag({
+            tag: tag
+        }).then(() => {
+            updating.value = false;
+            tagRemoving.value[tag.id] = false;
+        }).catch(error => {
+            updating.value = false;
+            tagRemoving.value[tag.id] = false;
+
+            if (!error.processed) {
+                snackbar.value?.showError(error);
+            }
+        });
+    });
+}
+
+function onMove(event: { moved: { element: { id: string }; oldIndex: number; newIndex: number } }): void {
+    if (!event || !event.moved) {
+        return;
+    }
+
+    const moveEvent = event.moved;
+
+    if (!moveEvent.element || !moveEvent.element.id) {
+        snackbar.value?.showMessage('Unable to move tag');
+        return;
+    }
+
+    accountTagsStore.changeTagDisplayOrder({
+        tagId: moveEvent.element.id,
+        from: moveEvent.oldIndex,
+        to: moveEvent.newIndex
+    }).then(() => {
+        displayOrderModified.value = true;
+    }).catch(error => {
+        snackbar.value?.showError(error);
+    });
+}
+
+accountTagsStore.loadAllTags({
+    force: false
+}).then(() => {
+    loading.value = false;
+}).catch(error => {
+    loading.value = false;
+
+    if (!error.processed) {
+        snackbar.value?.showError(error);
+    }
+});
+</script>
+
+<style>
+.transaction-tags-statistic-item-value {
+    font-size: 1rem;
+}
+
+.transaction-tags-table tr.transaction-tags-table-row-tag .hover-display {
+    display: none;
+}
+
+.transaction-tags-table tr.transaction-tags-table-row-tag:hover .hover-display {
+    display: inline-grid;
+}
+
+.transaction-tags-table tr:not(:last-child) > td > div {
+    padding-bottom: 1px;
+}
+
+.transaction-tags-table .has-bottom-border tr:last-child > td > div {
+    padding-bottom: 1px;
+}
+
+.transaction-tags-table tr.transaction-tags-table-row-tag .right-bottom-icon .v-badge__badge {
+    padding-bottom: 1px;
+}
+
+.transaction-tags-table .v-text-field .v-input__prepend {
+    margin-inline-end: 0;
+    color: rgba(var(--v-theme-on-surface));
+}
+
+.transaction-tags-table .v-text-field .v-input__prepend .v-badge > .v-badge__wrapper > .v-icon {
+    opacity: var(--v-medium-emphasis-opacity);
+}
+
+.transaction-tags-table .v-text-field.v-input--plain-underlined .v-input__prepend {
+    padding-top: 10px;
+}
+
+.transaction-tags-table .v-text-field .v-field__input {
+    font-size: 0.875rem;
+    padding-top: 0;
+    color: rgba(var(--v-theme-on-surface));
+}
+
+.transaction-tags-table .transaction-tag-name {
+    font-size: 0.875rem;
+}
+
+.transaction-tags-table tr .v-text-field .v-field__input {
+    padding-bottom: 1px;
+}
+</style>

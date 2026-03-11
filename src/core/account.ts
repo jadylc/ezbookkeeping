@@ -4,16 +4,17 @@ export class AccountType implements TypeAndName {
     private static readonly allInstances: AccountType[] = [];
 
     public static readonly SingleAccount = new AccountType(1, 'Single Account');
-    public static readonly MultiSubAccounts = new AccountType(2, 'Multiple Sub-accounts');
 
     public readonly type: number;
     public readonly name: string;
 
-    private constructor(type: number, name: string) {
+    private constructor(type: number, name: string, addToList: boolean = true) {
         this.type = type;
         this.name = name;
 
-        AccountType.allInstances.push(this);
+        if (addToList) {
+            AccountType.allInstances.push(this);
+        }
     }
 
     public static values(): AccountType[] {

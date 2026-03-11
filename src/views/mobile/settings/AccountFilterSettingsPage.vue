@@ -75,41 +75,18 @@
                     <f7-accordion-content :style="{ height: collapseStates[accountCategory.category]!.opened ? 'auto' : '' }">
                         <f7-list strong inset dividers accordion-list class="combination-list-content">
                             <f7-list-item checkbox
-                                          :class="{ 'has-child-list-item': account.type === AccountType.MultiSubAccounts.type && account.subAccounts && account.subAccounts.length > 0 }"
                                           :title="account.name"
                                           :value="account.id"
-                                          :checked="isAccountOrSubAccountsAllChecked(account, filterAccountIds)"
-                                          :indeterminate="isAccountOrSubAccountsHasButNotAllChecked(account, filterAccountIds)"
+                                          :checked="isAccountChecked(account, filterAccountIds)"
                                           :key="account.id"
                                           v-for="account in accountCategory.accounts"
-                                          @change="updateAccountOrSubAccountsSelected">
+                                          @change="updateAccountSelected">
                                 <template #media>
                                     <ItemIcon icon-type="account" :icon-id="account.icon" :color="account.color">
                                         <f7-badge color="gray" class="right-bottom-icon" v-if="account.hidden">
                                             <f7-icon f7="eye_slash_fill"></f7-icon>
                                         </f7-badge>
                                     </ItemIcon>
-                                </template>
-
-                                <template #root>
-                                    <ul class="padding-inline-start"
-                                        v-if="account.type === AccountType.MultiSubAccounts.type && account.subAccounts && account.subAccounts.length > 0">
-                                        <f7-list-item checkbox
-                                                      :title="subAccount.name"
-                                                      :value="subAccount.id"
-                                                      :checked="isAccountChecked(subAccount, filterAccountIds)"
-                                                      :key="subAccount.id"
-                                                      v-for="subAccount in account.subAccounts"
-                                                      @change="updateAccountSelected">
-                                            <template #media>
-                                                <ItemIcon icon-type="account" :icon-id="subAccount.icon" :color="subAccount.color">
-                                                    <f7-badge color="gray" class="right-bottom-icon" v-if="subAccount.hidden">
-                                                        <f7-icon f7="eye_slash_fill"></f7-icon>
-                                                    </f7-badge>
-                                                </ItemIcon>
-                                            </template>
-                                        </f7-list-item>
-                                    </ul>
                                 </template>
                             </f7-list-item>
                         </f7-list>
@@ -148,14 +125,11 @@ import {
 
 import { useAccountsStore } from '@/stores/account.ts';
 
-import { AccountType, AccountCategory } from '@/core/account.ts';
+import { AccountCategory } from '@/core/account.ts';
 import {
-    selectAccountOrSubAccounts,
     selectAll,
     selectNone,
-    selectInvert,
-    isAccountOrSubAccountsAllChecked,
-    isAccountOrSubAccountsHasButNotAllChecked
+    selectInvert
 } from '@/lib/account.ts';
 
 interface CollapseState {
@@ -226,18 +200,6 @@ function init(): void {
             showToast(error.message || error);
         }
     });
-}
-
-function updateAccountOrSubAccountsSelected(e: Event): void {
-    const target = e.target as HTMLInputElement;
-    const accountId = target.value;
-    const account = allVisibleAccountMap.value[accountId];
-
-    if (!account) {
-        return;
-    }
-
-    selectAccountOrSubAccounts(filterAccountIds.value, account, !target.checked);
 }
 
 function updateAccountSelected(e: Event): void {

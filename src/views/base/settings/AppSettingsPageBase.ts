@@ -134,6 +134,16 @@ export function useAppSettingPageBase() {
         return getIncludedAccountsDisplayContent(excludeAccountIds, accountsStore.allVisiblePlainAccounts);
     });
 
+    const accountTagsIncludedInTotalDisplayContent = computed<string>(() => {
+        const excludeAccountTagIds = settingsStore.appSettings.totalAmountExcludeAccountTagIds;
+
+        if (!excludeAccountTagIds || isObjectEmpty(excludeAccountTagIds)) {
+            return tt('All');
+        }
+
+        return tt('Partial');
+    });
+
     const accountCategorysDisplayOrderContent = computed<string>(() => {
         if (!settingsStore.appSettings.accountCategoryOrders) {
             return tt('Default');
@@ -245,6 +255,7 @@ export function useAppSettingPageBase() {
         currencySortByInExchangeRatesPage,
         accountsIncludedInHomePageOverviewDisplayContent,
         accountsIncludedInTotalDisplayContent,
+        accountTagsIncludedInTotalDisplayContent,
         accountCategorysDisplayOrderContent,
         transactionCategoriesIncludedInHomePageOverviewDisplayContent
     };

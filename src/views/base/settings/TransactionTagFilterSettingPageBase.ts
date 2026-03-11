@@ -15,6 +15,7 @@ import type { TransactionTag } from '@/models/transaction_tag.ts';
 import { TransactionTagFilter } from '@/models/transaction.ts';
 
 import { objectFieldToArrayItem } from '@/lib/common.ts';
+import { matchSearchText } from '@/lib/search.ts';
 
 export enum TransactionTagFilterState {
     Default = 0,
@@ -53,8 +54,6 @@ export function useTransactionTagFilterSettingPageBase(type?: string) {
 
     const tagFilterStateMap = ref<Record<string, TransactionTagFilterState>>({});
     const groupTagFilterTypesMap = ref<Record<string, TransactionGroupTagFilterTypes>>(getEmptyGroupTagFilterTypesMap(transactionTagsStore.allTransactionTagsByGroupMap));
-
-    const lowerCaseFilterContent = computed<string>(() => filterContent.value.toLowerCase());
 
     const title = computed<string>(() => {
         return 'Filter Transaction Tags';
@@ -118,7 +117,7 @@ export function useTransactionTagFilterSettingPageBase(type?: string) {
                     continue;
                 }
 
-                if (lowerCaseFilterContent.value && !tag.name.toLowerCase().includes(lowerCaseFilterContent.value)) {
+                if (filterContent.value && !matchSearchText(tag.name, filterContent.value)) {
                     continue;
                 }
 

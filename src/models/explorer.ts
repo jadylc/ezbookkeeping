@@ -1,6 +1,5 @@
 import { type PartialRecord, itemAndIndex, keysIfValueEquals } from '@/core/base.ts';
 import { TimezoneTypeForStatistics } from '@/core/timezone.ts';
-import { AccountType } from '@/core/account.ts';
 import { TransactionType } from '@/core/transaction.ts';
 import { ChartSortingType } from '@/core/statistics.ts';
 import {
@@ -813,10 +812,6 @@ export class TransactionExplorerSourceAccountCondition implements TransactionExp
             const account = allAccountsMap[id];
 
             if (account) {
-                if (account.type === AccountType.MultiSubAccounts.type) {
-                    return '';
-                }
-
                 return `'${account.name}'`;
             } else {
                 return `'${id}'`;
@@ -851,10 +846,6 @@ export class TransactionExplorerDestinationAccountCondition implements Transacti
             const account = allAccountsMap[id];
 
             if (account) {
-                if (account.type === AccountType.MultiSubAccounts.type) {
-                    return '';
-                }
-
                 return `'${account.name}'`;
             } else {
                 return `'${id}'`;

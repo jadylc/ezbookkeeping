@@ -281,7 +281,7 @@ export const useExplorersStore = defineStore('explorers', () => {
                 categoryDisplayOrders: [transaction.type]
             };
         } else if (dimension === TransactionExplorerDataDimension.SourceAccount) {
-            const primaryAccount = accountsStore.allAccountsMap[transaction.sourceAccount.parentId] ?? transaction.sourceAccount;
+            const primaryAccount = transaction.sourceAccount;
             const primaryAccountCategoryDisplayOrder: number = settingsStore.accountCategoryDisplayOrders[primaryAccount.category] || Number.MAX_SAFE_INTEGER;
 
             return {
@@ -311,7 +311,7 @@ export const useExplorersStore = defineStore('explorers', () => {
                 categoryDisplayOrders: [currencyDisplayOrders[transaction.sourceAccount.currency] || 0]
             };
         }  else if (dimension === TransactionExplorerDataDimension.DestinationAccount) {
-            const primaryAccount = accountsStore.allAccountsMap[transaction.destinationAccount?.parentId ?? ''] ?? transaction.destinationAccount;
+            const primaryAccount = transaction.destinationAccount;
             const primaryAccountCategoryDisplayOrder: number = settingsStore.accountCategoryDisplayOrders[primaryAccount?.category || 0] || Number.MAX_SAFE_INTEGER;
 
             return {

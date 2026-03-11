@@ -349,7 +349,6 @@ import { useTransactionTagsStore } from '@/stores/transactionTag.ts';
 import { useExplorersStore } from '@/stores/explorer.ts';
 
 import { type NameValue, values } from '@/core/base.ts';
-import { AccountType } from '@/core/account.ts';
 import { TransactionType } from '@/core/transaction.ts';
 import {
     TransactionExplorerConditionRelation,
@@ -440,10 +439,6 @@ function getFilteredAccountsDisplayContent(filterAccountIds?: Record<string, boo
     const selectedAccountNames: string[] = [];
 
     for (const account of accountsStore.allPlainAccounts) {
-        if (account.type === AccountType.MultiSubAccounts.type) {
-            continue;
-        }
-
         if (!filterAccountIds[account.id]) {
             allAccountSelected = false;
         } else {

@@ -10,9 +10,7 @@ import { keys, keysIfValueEquals, values } from '@/core/base.ts';
 import type { Account, CategorizedAccount } from '@/models/account.ts';
 
 import {
-    filterCategorizedAccounts,
-    selectAccountOrSubAccounts,
-    isAccountOrSubAccountsAllChecked
+    filterCategorizedAccounts
 } from '@/lib/account.ts';
 
 export type AccountFilterType = 'statisticsDefault' | 'statisticsCurrent' | 'homePageOverview' | 'transactionListCurrent' | 'accountListTotalAmount' | 'custom';
@@ -57,12 +55,6 @@ export function useAccountFilterSettingPageBase(type?: AccountFilterType, select
         for (const accountCategory of allCategorizedAccounts.value) {
             for (const account of accountCategory.accounts) {
                 accountMap[account.id] = account;
-
-                if (account.subAccounts) {
-                    for (const subAccount of account.subAccounts) {
-                        accountMap[subAccount.id] = subAccount;
-                    }
-                }
             }
         }
 
@@ -114,7 +106,7 @@ export function useAccountFilterSettingPageBase(type?: AccountFilterType, select
                 const account = accountsStore.allAccountsMap[accountId];
 
                 if (account) {
-                    selectAccountOrSubAccounts(allAccountIds, account, false);
+                    allAccountIds[account.id] = false;
                 }
             }
             filterAccountIds.value = allAccountIds;
@@ -128,7 +120,7 @@ export function useAccountFilterSettingPageBase(type?: AccountFilterType, select
                     const account = accountsStore.allAccountsMap[accountId];
 
                     if (account) {
-                        selectAccountOrSubAccounts(allAccountIds, account, false);
+                        allAccountIds[account.id] = false;
                     }
                 }
             }
@@ -158,7 +150,7 @@ export function useAccountFilterSettingPageBase(type?: AccountFilterType, select
                 continue;
             }
 
-            if (!isAccountOrSubAccountsAllChecked(account, filterAccountIds.value)) {
+            if (filterAccountIds.value[accountId]) {
                 filteredAccountIds[accountId] = true;
                 isAllSelected = false;
             } else {

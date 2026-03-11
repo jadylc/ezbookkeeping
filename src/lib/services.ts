@@ -40,6 +40,14 @@ import type {
     AccountDeleteRequest
 } from '@/models/account.ts';
 import type {
+    AccountTagCreateRequest,
+    AccountTagModifyRequest,
+    AccountTagHideRequest,
+    AccountTagMoveRequest,
+    AccountTagDeleteRequest,
+    AccountTagInfoResponse
+} from '@/models/account_tag.ts';
+import type {
     AuthResponse,
     RegisterResponse
 } from '@/models/auth_response.ts';
@@ -513,8 +521,26 @@ export default {
     deleteAccount: (req: AccountDeleteRequest): ApiResponsePromise<boolean> => {
         return axios.post<ApiResponse<boolean>>('v1/accounts/delete.json', req);
     },
-    deleteSubAccount: (req: AccountDeleteRequest): ApiResponsePromise<boolean> => {
-        return axios.post<ApiResponse<boolean>>('v1/accounts/sub_account/delete.json', req);
+    getAllAccountTags: (): ApiResponsePromise<AccountTagInfoResponse[]> => {
+        return axios.get<ApiResponse<AccountTagInfoResponse[]>>('v1/account/tags/list.json');
+    },
+    getAccountTag: ({ id }: { id: string }): ApiResponsePromise<AccountTagInfoResponse> => {
+        return axios.get<ApiResponse<AccountTagInfoResponse>>('v1/account/tags/get.json?id=' + id);
+    },
+    addAccountTag: (req: AccountTagCreateRequest): ApiResponsePromise<AccountTagInfoResponse> => {
+        return axios.post<ApiResponse<AccountTagInfoResponse>>('v1/account/tags/add.json', req);
+    },
+    modifyAccountTag: (req: AccountTagModifyRequest): ApiResponsePromise<AccountTagInfoResponse> => {
+        return axios.post<ApiResponse<AccountTagInfoResponse>>('v1/account/tags/modify.json', req);
+    },
+    hideAccountTag: (req: AccountTagHideRequest): ApiResponsePromise<boolean> => {
+        return axios.post<ApiResponse<boolean>>('v1/account/tags/hide.json', req);
+    },
+    moveAccountTag: (req: AccountTagMoveRequest): ApiResponsePromise<boolean> => {
+        return axios.post<ApiResponse<boolean>>('v1/account/tags/move.json', req);
+    },
+    deleteAccountTag: (req: AccountTagDeleteRequest): ApiResponsePromise<boolean> => {
+        return axios.post<ApiResponse<boolean>>('v1/account/tags/delete.json', req);
     },
     getTransactions: (req: TransactionListByMaxTimeRequest): ApiResponsePromise<TransactionInfoPageWrapperResponse> => {
         const tagFilter = encodeURIComponent(req.tagFilter);

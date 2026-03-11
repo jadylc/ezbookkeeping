@@ -879,10 +879,6 @@ func (s *TransactionService) ModifyTransaction(c core.Context, transaction *mode
 			return errs.ErrCannotModifyTransactionInHiddenAccount
 		}
 
-		if sourceAccount.Type == models.ACCOUNT_TYPE_MULTI_SUB_ACCOUNTS || (destinationAccount != nil && destinationAccount.Type == models.ACCOUNT_TYPE_MULTI_SUB_ACCOUNTS) {
-			return errs.ErrCannotModifyTransactionInParentAccount
-		}
-
 		if (transaction.Type == models.TRANSACTION_DB_TYPE_TRANSFER_OUT || transaction.Type == models.TRANSACTION_DB_TYPE_TRANSFER_IN) &&
 			sourceAccount.Currency == destinationAccount.Currency && transaction.Amount != transaction.RelatedAccountAmount {
 			return errs.ErrTransactionSourceAndDestinationAmountNotEqual
@@ -919,10 +915,6 @@ func (s *TransactionService) ModifyTransaction(c core.Context, transaction *mode
 		modifyTransactionTime := false
 
 		if utils.GetUnixTimeFromTransactionTime(transaction.TransactionTime) != utils.GetUnixTimeFromTransactionTime(oldTransaction.TransactionTime) {
-			if oldTransaction.Type == models.TRANSACTION_DB_TYPE_MODIFY_BALANCE {
-				return errs.ErrBalanceModificationTransactionCannotModifyTime
-			}
-
 			sameSecondLatestTransaction := &models.Transaction{}
 			minTransactionTime := utils.GetMinTransactionTimeFromUnixTime(utils.GetUnixTimeFromTransactionTime(transaction.TransactionTime))
 			maxTransactionTime := utils.GetMaxTransactionTimeFromUnixTime(utils.GetUnixTimeFromTransactionTime(transaction.TransactionTime))
@@ -999,24 +991,6 @@ func (s *TransactionService) ModifyTransaction(c core.Context, transaction *mode
 
 		if err != nil {
 			return err
-		}
-
-		// Not allow to add transaction before balance modification transaction
-		if transaction.Type != models.TRANSACTION_DB_TYPE_MODIFY_BALANCE {
-			otherTransactionExists := false
-
-			if destinationAccount != nil && sourceAccount.AccountId != destinationAccount.AccountId {
-				otherTransactionExists, err = sess.Cols("uid", "deleted", "account_id").Where("uid=? AND deleted=? AND type=? AND (account_id=? OR account_id=?) AND transaction_time>=?", transaction.Uid, false, models.TRANSACTION_DB_TYPE_MODIFY_BALANCE, sourceAccount.AccountId, destinationAccount.AccountId, transaction.TransactionTime).Limit(1).Exist(&models.Transaction{})
-			} else {
-				otherTransactionExists, err = sess.Cols("uid", "deleted", "account_id").Where("uid=? AND deleted=? AND type=? AND account_id=? AND transaction_time>=?", transaction.Uid, false, models.TRANSACTION_DB_TYPE_MODIFY_BALANCE, sourceAccount.AccountId, transaction.TransactionTime).Limit(1).Exist(&models.Transaction{})
-			}
-
-			if err != nil {
-				log.Errorf(c, "[transactions.ModifyTransaction] failed to get whether other transactions exist, because %s", err.Error())
-				return err
-			} else if otherTransactionExists {
-				return errs.ErrCannotAddTransactionBeforeBalanceModificationTransaction
-			}
 		}
 
 		// Update transaction row
@@ -1330,10 +1304,6 @@ func (s *TransactionService) MoveAllTransactionsBetweenAccounts(c core.Context, 
 			return errs.ErrCannotMoveTransactionFromOrToHiddenAccount
 		}
 
-		if fromAccount.Type == models.ACCOUNT_TYPE_MULTI_SUB_ACCOUNTS || toAccount.Type == models.ACCOUNT_TYPE_MULTI_SUB_ACCOUNTS {
-			return errs.ErrCannotMoveTransactionFromOrToParentAccount
-		}
-
 		if fromAccount.Currency != toAccount.Currency {
 			return errs.ErrCannotMoveTransactionBetweenAccountsWithDifferentCurrencies
 		}
@@ -1549,10 +1519,6 @@ func (s *TransactionService) DeleteTransaction(c core.Context, uid int64, transa
 
 		if sourceAccount.Hidden || (destinationAccount != nil && destinationAccount.Hidden) {
 			return errs.ErrCannotDeleteTransactionInHiddenAccount
-		}
-
-		if sourceAccount.Type == models.ACCOUNT_TYPE_MULTI_SUB_ACCOUNTS || (destinationAccount != nil && destinationAccount.Type == models.ACCOUNT_TYPE_MULTI_SUB_ACCOUNTS) {
-			return errs.ErrCannotDeleteTransactionInParentAccount
 		}
 
 		// Update transaction row to deleted
@@ -2214,10 +2180,6 @@ func (s *TransactionService) doCreateTransaction(c core.Context, database *datas
 		return errs.ErrCannotAddTransactionToHiddenAccount
 	}
 
-	if sourceAccount.Type == models.ACCOUNT_TYPE_MULTI_SUB_ACCOUNTS || (destinationAccount != nil && destinationAccount.Type == models.ACCOUNT_TYPE_MULTI_SUB_ACCOUNTS) {
-		return errs.ErrCannotAddTransactionToParentAccount
-	}
-
 	if (transaction.Type == models.TRANSACTION_DB_TYPE_TRANSFER_OUT || transaction.Type == models.TRANSACTION_DB_TYPE_TRANSFER_IN) &&
 		sourceAccount.Currency == destinationAccount.Currency && transaction.Amount != transaction.RelatedAccountAmount {
 		return errs.ErrTransactionSourceAndDestinationAmountNotEqual
@@ -2262,21 +2224,6 @@ func (s *TransactionService) doCreateTransaction(c core.Context, database *datas
 
 		transaction.RelatedAccountId = transaction.AccountId
 		transaction.RelatedAccountAmount = transaction.Amount - sourceAccount.Balance
-	} else { // Not allow to add transaction before balance modification transaction
-		otherTransactionExists := false
-
-		if destinationAccount != nil && sourceAccount.AccountId != destinationAccount.AccountId {
-			otherTransactionExists, err = sess.Cols("uid", "deleted", "account_id").Where("uid=? AND deleted=? AND type=? AND (account_id=? OR account_id=?) AND transaction_time>=?", transaction.Uid, false, models.TRANSACTION_DB_TYPE_MODIFY_BALANCE, sourceAccount.AccountId, destinationAccount.AccountId, transaction.TransactionTime).Limit(1).Exist(&models.Transaction{})
-		} else {
-			otherTransactionExists, err = sess.Cols("uid", "deleted", "account_id").Where("uid=? AND deleted=? AND type=? AND account_id=? AND transaction_time>=?", transaction.Uid, false, models.TRANSACTION_DB_TYPE_MODIFY_BALANCE, sourceAccount.AccountId, transaction.TransactionTime).Limit(1).Exist(&models.Transaction{})
-		}
-
-		if err != nil {
-			log.Errorf(c, "[transactions.doCreateTransaction] failed to get whether other transactions exist, because %s", err.Error())
-			return err
-		} else if otherTransactionExists {
-			return errs.ErrCannotAddTransactionBeforeBalanceModificationTransaction
-		}
 	}
 
 	// Insert transaction row
@@ -2723,54 +2670,6 @@ func (s *TransactionService) getAccountModels(sess *xorm.Session, transaction *m
 			} else if !has {
 				return nil, nil, errs.ErrDestinationAccountNotFound
 			}
-		}
-	}
-
-	// check whether the parent accounts are valid
-	if sourceAccount.ParentAccountId > 0 && destinationAccount != nil && sourceAccount.ParentAccountId != destinationAccount.ParentAccountId && destinationAccount.ParentAccountId > 0 {
-		var accounts []*models.Account
-		err := sess.Where("uid=? AND deleted=? and (account_id=? or account_id=?)", transaction.Uid, false, sourceAccount.ParentAccountId, destinationAccount.ParentAccountId).Find(&accounts)
-
-		if err != nil {
-			return nil, nil, err
-		}
-
-		if len(accounts) < 2 {
-			return nil, nil, errs.ErrAccountNotFound
-		}
-
-		for i := 0; i < len(accounts); i++ {
-			account := accounts[i]
-
-			if account.Hidden {
-				return nil, nil, errs.ErrCannotUseHiddenAccount
-			}
-		}
-	} else if sourceAccount.ParentAccountId > 0 && (destinationAccount == nil || sourceAccount.ParentAccountId == destinationAccount.ParentAccountId || destinationAccount.ParentAccountId == 0) {
-		sourceParentAccount := &models.Account{}
-		has, err = sess.ID(sourceAccount.ParentAccountId).Where("uid=? AND deleted=?", transaction.Uid, false).Get(sourceParentAccount)
-
-		if err != nil {
-			return nil, nil, err
-		} else if !has {
-			return nil, nil, errs.ErrSourceAccountNotFound
-		}
-
-		if sourceParentAccount.Hidden {
-			return nil, nil, errs.ErrCannotUseHiddenAccount
-		}
-	} else if sourceAccount.ParentAccountId == 0 && destinationAccount != nil && destinationAccount.ParentAccountId > 0 {
-		destinationParentAccount := &models.Account{}
-		has, err = sess.ID(destinationAccount.ParentAccountId).Where("uid=? AND deleted=?", transaction.Uid, false).Get(destinationParentAccount)
-
-		if err != nil {
-			return nil, nil, err
-		} else if !has {
-			return nil, nil, errs.ErrDestinationAccountNotFound
-		}
-
-		if destinationParentAccount.Hidden {
-			return nil, nil, errs.ErrCannotUseHiddenAccount
 		}
 	}
 

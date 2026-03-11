@@ -21,7 +21,12 @@
                 </p>
                 <p class="no-margin">
                     <span class="net-assets" v-if="loading">0.00 USD</span>
-                    <span class="net-assets" v-else-if="!loading">{{ netAssets }}</span>
+                    <span class="net-assets" v-else-if="!loading">
+                        <span class="net-assets-line" :key="item.currency" v-for="item in netAssetsDisplayItems">
+                            <span class="net-assets-amount">{{ item.amount }}</span>
+                            <span class="net-assets-currency">{{ item.currencyName }}</span>
+                        </span>
+                    </span>
                     <f7-link class="display-inline-flex margin-inline-start-half" @click="showAccountBalance = !showAccountBalance">
                         <f7-icon class="ebk-hide-icon" :f7="showAccountBalance ? 'eye_slash_fill' : 'eye_fill'"></f7-icon>
                     </f7-link>
@@ -30,14 +35,44 @@
                     <small class="account-overview-info" v-if="loading">
                         <span>Total assets | Total liabilities</span>
                     </small>
-                    <small class="account-overview-info" v-else-if="!loading">
-                        <span>{{ tt('Total assets') }}</span>
-                        <span>{{ totalAssets }}</span>
-                        <span>|</span>
-                        <span>{{ tt('Total liabilities') }}</span>
-                        <span>{{ totalLiabilities }}</span>
-                    </small>
+                    <span class="account-overview-info" v-else-if="!loading">
+                        <span class="account-overview-section">
+                            <span class="account-overview-section-label">{{ tt('Total assets') }}</span>
+                            <span class="account-overview-section-values">
+                                <span class="account-overview-value" :key="item.currency" v-for="item in totalAssetsDisplayItems">
+                                    <span class="account-overview-amount">{{ item.amount }}</span>
+                                    <span class="account-overview-currency">{{ item.currencyName }}</span>
+                                </span>
+                            </span>
+                        </span>
+                        <span class="account-overview-section">
+                            <span class="account-overview-section-label">{{ tt('Total liabilities') }}</span>
+                            <span class="account-overview-section-values">
+                                <span class="account-overview-value" :key="item.currency" v-for="item in totalLiabilitiesDisplayItems">
+                                    <span class="account-overview-amount">{{ item.amount }}</span>
+                                    <span class="account-overview-currency">{{ item.currencyName }}</span>
+                                </span>
+                            </span>
+                        </span>
+                    </span>
                 </p>
+                <p class="no-margin account-overview-info mt-2" v-if="!loading">
+                    <span>{{ tt('Total Currency') }}</span>
+                </p>
+                <div class="account-total-currency-chips" v-if="!loading">
+                    <f7-chip
+                        outline
+                        :text="getCurrencyDisplayName(currency)"
+                        :key="currency"
+                        :class="{ 'chip-selected': currency === totalAmountTargetCurrency }"
+                        v-for="currency in totalAmountCurrencyOptions"
+                        @click="setTotalAmountTargetCurrency(currency)"
+                    ></f7-chip>
+                </div>
+                <div class="account-total-filter-link" v-if="!loading">
+                    <f7-link @click="setAccountsIncludedInTotal()">{{ tt('Accounts Included in Total') }}</f7-link>
+                    <f7-link class="margin-inline-start-half" @click="setAccountTagsIncludedInTotal()">{{ tt('Filter Account Tags') }}</f7-link>
+                </div>
             </f7-card-header>
         </f7-card>
 
@@ -79,22 +114,21 @@
                      @sortable:sort="onSort">
                 <f7-list-item group-title :sortable="false">
                     <small>
-                        <span>{{ tt(accountCategory.name) }}</span>
+                        <span>{{ tt(accountCategory.name) }} ({{ getAccountCategoryCount(accountCategory) }})</span>
                         <span style="margin-inline-start: 10px">{{ accountCategoryTotalBalance(accountCategory) }}</span>
                     </small>
                 </f7-list-item>
                 <f7-list-item swipeout
                               class="nested-list-item"
                               :id="getAccountDomId(account)"
-                              :class="{ 'has-child-list-item': account.type === AccountType.MultiSubAccounts.type && hasVisibleSubAccount(account), 'actual-first-child': account.id === firstShowingIds.accounts[accountCategory.type], 'actual-last-child': account.id === lastShowingIds.accounts[accountCategory.type] }"
-                              :after="account.type === AccountType.SingleAccount.type ? accountBalance(account) : ''"
+                              :class="{ 'actual-first-child': account.id === firstShowingIds.accounts[accountCategory.type], 'actual-last-child': account.id === lastShowingIds.accounts[accountCategory.type] }"
                               :link="!sortable ? '/transaction/list?accountIds=' + account.id : null"
                               :key="account.id"
                               v-for="account in allCategorizedAccountsMap[accountCategory.type]!.accounts"
                               v-show="showHidden || !account.hidden"
                               @taphold="setSortable()"
                 >
-                    <template #media v-if="account.type !== AccountType.MultiSubAccounts.type || !hasVisibleSubAccount(account)">
+                    <template #media>
                         <ItemIcon icon-type="account" :icon-id="account.icon" :color="account.color">
                             <f7-badge color="gray" class="right-bottom-icon" v-if="account.hidden">
                                 <f7-icon f7="eye_slash_fill"></f7-icon>
@@ -104,41 +138,22 @@
 
                     <template #title>
                         <div class="nested-list-item-inner display-flex padding-top-half padding-bottom-half">
-                            <ItemIcon icon-type="account" :icon-id="account.icon" :color="account.color"
-                                      v-if="account.type === AccountType.MultiSubAccounts.type && hasVisibleSubAccount(account)">
-                                <f7-badge color="gray" class="right-bottom-icon" v-if="account.hidden">
-                                    <f7-icon f7="eye_slash_fill"></f7-icon>
-                                </f7-badge>
-                            </ItemIcon>
                             <div class="nested-list-item-title">
                                 <span>{{ account.name }}</span>
                                 <div class="item-footer" v-if="account.comment">{{ account.comment }}</div>
-                            </div>
-                            <div class="nested-list-item-after" v-if="account.type === AccountType.MultiSubAccounts.type">
-                                <span>{{ accountBalance(account) }}</span>
+                                <div class="item-footer account-tags" v-if="getAccountTagText(account)">{{ getAccountTagText(account) }}</div>
                             </div>
                         </div>
-                        <li v-if="account.type === AccountType.MultiSubAccounts.type">
-                            <ul class="no-padding">
-                                <f7-list-item class="no-sortable nested-list-item-child"
-                                              :class="{ 'actual-first-child': subAccount.id === firstShowingIds.subAccounts[account.id], 'actual-last-child': subAccount.id === lastShowingIds.subAccounts[account.id] }"
-                                              :id="getAccountDomId(subAccount)"
-                                              :title="subAccount.name" :footer="subAccount.comment" :after="accountBalance(account, subAccount.id)"
-                                              :link="!sortable ? '/transaction/list?accountIds=' + subAccount.id : null"
-                                              :key="subAccount.id"
-                                              v-for="subAccount in account.subAccounts"
-                                              v-show="showHidden || !subAccount.hidden"
-                                >
-                                    <template #media>
-                                        <ItemIcon icon-type="account" :icon-id="subAccount.icon" :color="subAccount.color">
-                                            <f7-badge color="gray" class="right-bottom-icon" v-if="subAccount.hidden">
-                                                <f7-icon f7="eye_slash_fill"></f7-icon>
-                                            </f7-badge>
-                                        </ItemIcon>
-                                    </template>
-                                </f7-list-item>
-                            </ul>
-                        </li>
+                    </template>
+                    <template #after>
+                        <span class="account-balance-line">
+                            <span class="account-balance">{{ accountBalance(account) }}</span>
+                            <span class="account-balance-code" v-if="account.currency">({{ account.currency }})</span>
+                        </span>
+                        <span class="account-balance-converted" v-if="accountBalanceInDefaultCurrency(account)">
+                            <span>{{ accountBalanceInDefaultCurrency(account) }}</span>
+                            <span class="account-balance-code" v-if="defaultCurrency">({{ defaultCurrency }})</span>
+                        </span>
                     </template>
                     <f7-swipeout-actions :left="textDirection === TextDirection.LTR"
                                          :right="textDirection === TextDirection.RTL"
@@ -162,23 +177,13 @@
         </div>
 
         <f7-actions close-by-outside-click close-on-escape :opened="showAccountMoreActionSheet" @actions:closed="showAccountMoreActionSheet = false">
-            <f7-actions-group v-if="accountForMoreActionSheet && accountForMoreActionSheet.type === AccountType.SingleAccount.type">
+            <f7-actions-group v-if="accountForMoreActionSheet">
                 <f7-actions-button @click="showReconciliationStatement(accountForMoreActionSheet)">{{ tt('Reconciliation Statement') }}</f7-actions-button>
             </f7-actions-group>
-            <f7-actions-group v-if="accountForMoreActionSheet && accountForMoreActionSheet.type === AccountType.SingleAccount.type">
+            <f7-actions-group v-if="accountForMoreActionSheet">
                 <f7-actions-button @click="moveAllTransactions(accountForMoreActionSheet)">{{ tt('Move All Transactions') }}</f7-actions-button>
                 <f7-actions-button color="red" @click="showPasswordSheetForClearAllTransaction(accountForMoreActionSheet)">{{ tt('Clear All Transactions') }}</f7-actions-button>
             </f7-actions-group>
-            <template v-if="accountForMoreActionSheet && accountForMoreActionSheet.type === AccountType.MultiSubAccounts.type">
-                <f7-actions-group :key="subAccount.id"
-                                  v-for="subAccount in accountForMoreActionSheet.subAccounts"
-                                  v-show="showHidden || !subAccount.hidden">
-                    <f7-actions-label>{{ subAccount.name }}</f7-actions-label>
-                    <f7-actions-button @click="showReconciliationStatement(subAccount)">{{ tt('Reconciliation Statement') }}</f7-actions-button>
-                    <f7-actions-button @click="moveAllTransactions(subAccount)">{{ tt('Move All Transactions') }}</f7-actions-button>
-                    <f7-actions-button color="red" @click="showPasswordSheetForClearAllTransaction(subAccount)">{{ tt('Clear All Transactions') }}</f7-actions-button>
-                </f7-actions-group>
-            </template>
             <f7-actions-group>
                 <f7-actions-button bold close>{{ tt('Cancel') }}</f7-actions-button>
             </f7-actions-group>
@@ -189,9 +194,6 @@
                 <f7-actions-button :class="{ 'disabled': maxCategoryAccountCount < 2 }" @click="setSortable()">{{ tt('Sort') }}</f7-actions-button>
                 <f7-actions-button v-if="!showHidden" @click="showHidden = true">{{ tt('Show Hidden Accounts') }}</f7-actions-button>
                 <f7-actions-button v-if="showHidden" @click="showHidden = false">{{ tt('Hide Hidden Accounts') }}</f7-actions-button>
-            </f7-actions-group>
-            <f7-actions-group v-if="hasAnyVisibleAccount">
-                <f7-actions-button @click="setAccountsIncludedInTotal()">{{ tt('Set Accounts Included in Total') }}</f7-actions-button>
             </f7-actions-group>
             <f7-actions-group>
                 <f7-actions-button bold close>{{ tt('Cancel') }}</f7-actions-button>
@@ -230,9 +232,11 @@ import { useAccountListPageBase } from '@/views/base/accounts/AccountListPageBas
 
 import { useRootStore } from '@/stores/index.ts';
 import { useAccountsStore } from '@/stores/account.ts';
+import { useAccountTagsStore } from '@/stores/accountTag.ts';
+import { useSettingsStore } from '@/stores/setting.ts';
 
 import { TextDirection } from '@/core/text.ts';
-import { AccountType, AccountCategory } from '@/core/account.ts';
+import { AccountCategory } from '@/core/account.ts';
 import type { Account, AccountShowingIds } from '@/models/account.ts';
 
 import { onSwipeoutDeleted } from '@/lib/ui/mobile.ts';
@@ -250,18 +254,25 @@ const {
     displayOrderModified,
     showAccountBalance,
     customAccountCategoryOrder,
+    defaultCurrency,
     allCategorizedAccountsMap,
     allAccountCount,
     maxCategoryAccountCount,
-    netAssets,
-    totalAssets,
-    totalLiabilities,
+    totalAmountTargetCurrency,
+    totalAmountCurrencyOptions,
+    netAssetsDisplayItems,
+    totalAssetsDisplayItems,
+    totalLiabilitiesDisplayItems,
+    getCurrencyDisplayName,
     accountCategoryTotalBalance,
-    accountBalance
+    accountBalance,
+    accountBalanceInDefaultCurrency
 } = useAccountListPageBase();
 
 const rootStore = useRootStore();
 const accountsStore = useAccountsStore();
+const settingsStore = useSettingsStore();
+const accountTagsStore = useAccountTagsStore();
 
 const loadingError = ref<unknown | null>(null);
 const sortable = ref<boolean>(false);
@@ -279,7 +290,6 @@ const displayOrderSaving = ref<boolean>(false);
 const textDirection = computed<TextDirection>(() => getCurrentLanguageTextDirection());
 const firstShowingIds = computed<AccountShowingIds>(() => accountsStore.getFirstShowingIds(showHidden.value));
 const lastShowingIds = computed<AccountShowingIds>(() => accountsStore.getLastShowingIds(showHidden.value));
-const hasAnyVisibleAccount = computed<boolean>(() => accountsStore.allVisibleAccountsCount > 0);
 const noAvailableAccount = computed<boolean>(() => {
     if (showHidden.value) {
         return accountsStore.allAvailableAccountsCount < 1;
@@ -292,8 +302,49 @@ function hasAccount(accountCategory: AccountCategory, visibleOnly: boolean): boo
     return accountsStore.hasAccount(accountCategory, visibleOnly);
 }
 
-function hasVisibleSubAccount(account: Account): boolean {
-    return accountsStore.hasVisibleSubAccount(showHidden.value, account);
+function getAccountCategoryCount(accountCategory: AccountCategory): number {
+    const categorizedAccounts = allCategorizedAccountsMap.value[accountCategory.type];
+
+    if (!categorizedAccounts || !categorizedAccounts.accounts || !categorizedAccounts.accounts.length) {
+        return 0;
+    }
+
+    if (showHidden.value) {
+        return categorizedAccounts.accounts.length;
+    }
+
+    let count = 0;
+
+    for (const account of categorizedAccounts.accounts) {
+        if (!account.hidden) {
+            count++;
+        }
+    }
+
+    return count;
+}
+
+function getAccountTagText(account: Account): string {
+    if (!account) {
+        return '';
+    }
+
+    const rawTags = account.tags && account.tags.length ? account.tags : (account.tag ? [account.tag] : []);
+    const tagSet = new Set<string>();
+
+    for (const rawTag of rawTags) {
+        const tagName = rawTag?.trim();
+
+        if (tagName) {
+            tagSet.add(tagName);
+        }
+    }
+
+    if (!tagSet.size) {
+        return '';
+    }
+
+    return Array.from(tagSet).map(tag => `#${tag}`).join(' ');
 }
 
 function getAccountDomId(account: Account): string {
@@ -310,6 +361,12 @@ function parseAccountIdFromDomId(domId: string): string | null {
 
 function init(): void {
     loading.value = true;
+
+    accountTagsStore.loadAllTags({
+        force: false
+    }).catch(() => {
+        // ignore tag loading errors for account list totals
+    });
 
     accountsStore.loadAllAccounts({
         force: false
@@ -332,6 +389,12 @@ function reload(done?: () => void): void {
     }
 
     const force = !!done;
+
+    accountTagsStore.loadAllTags({
+        force: force
+    }).catch(() => {
+        // ignore tag loading errors for account list totals
+    });
 
     accountsStore.loadAllAccounts({
         force: force
@@ -542,6 +605,14 @@ function setAccountsIncludedInTotal(): void {
     props.f7router.navigate('/settings/filter/account?type=accountListTotalAmount');
 }
 
+function setAccountTagsIncludedInTotal(): void {
+    props.f7router.navigate('/settings/filter/account_tag?type=accountListTotalAmount');
+}
+
+function setTotalAmountTargetCurrency(currency: string): void {
+    settingsStore.setTotalAmountTargetCurrency(currency);
+}
+
 function onSort(event: { el: { id: string }; from: number; to: number }): void {
     if (!event || !event.el || !event.el.id) {
         showToast('Unable to move account');
@@ -597,8 +668,47 @@ init();
     font-size: 1.5em;
 }
 
+.net-assets-line {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.net-assets-currency {
+    font-size: 0.75em;
+    opacity: 0.7;
+}
+
 .account-overview-info {
     opacity: 0.6;
+}
+
+.account-overview-section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.account-overview-section-label {
+    font-size: 0.9em;
+}
+
+.account-overview-section-values {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.account-overview-value {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.account-overview-currency {
+    font-size: 0.8em;
+    opacity: 0.7;
 }
 
 .account-overview-info > span {
@@ -609,11 +719,55 @@ init();
     margin-inline-end: 0;
 }
 
+.account-total-currency-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.account-total-currency-chips .chip-selected {
+    --f7-chip-outline-border-color: var(--f7-theme-color);
+    --f7-chip-text-color: var(--f7-theme-color);
+}
+
+.account-total-filter-link {
+    margin-top: 6px;
+}
+
 .account-list {
     --f7-list-item-footer-font-size: var(--ebk-large-footer-font-size);
 }
 
 .account-list .item-footer {
     padding-top: 4px;
+}
+
+.account-list .account-tags {
+    opacity: 0.7;
+    font-size: 0.8em;
+}
+
+.account-list .item-after {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
+.account-list .account-balance-line {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.account-list .account-balance-code {
+    font-size: 0.8em;
+    opacity: 0.7;
+}
+
+.account-list .account-balance-converted {
+    font-size: 0.8em;
+    opacity: 0.7;
 }
 </style>

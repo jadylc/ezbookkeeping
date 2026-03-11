@@ -58,6 +58,7 @@ import { useI18n } from '@/locales/helpers.ts';
 
 import { scrollToSelectedItem } from '@/lib/ui/common.ts';
 import { type Framework7Dom } from '@/lib/ui/mobile.ts';
+import { matchSearchText } from '@/lib/search.ts';
 
 const props = defineProps<{
     modelValue: unknown;
@@ -96,11 +97,11 @@ const showSearchbar = ref<boolean>(false);
 const filteredItems = computed<unknown[]>(() => {
     const finalItems: unknown[] = [];
     const items = props.items;
-    const lowerCaseFilterContent = filterContent.value?.toLowerCase() ?? '';
+    const keyword = filterContent.value ?? '';
 
     for (const item of items) {
         if (props.valueType === 'index') {
-            if (!props.enableFilter || !lowerCaseFilterContent || String(item).toLowerCase().indexOf(lowerCaseFilterContent) >= 0) {
+            if (!props.enableFilter || !keyword || matchSearchText(String(item), keyword)) {
                 finalItems.push(item);
                 continue;
             }
@@ -111,21 +112,21 @@ const filteredItems = computed<unknown[]>(() => {
                 continue;
             }
 
-            if (!props.enableFilter || !lowerCaseFilterContent) {
+            if (!props.enableFilter || !keyword) {
                 finalItems.push(item);
                 continue;
             }
 
             const title = ti(itemRecord[props.titleField] as string, !!props.titleI18n);
 
-            if (title.toLowerCase().indexOf(lowerCaseFilterContent) >= 0) {
+            if (matchSearchText(title, keyword)) {
                 finalItems.push(item);
                 continue;
             }
 
             const afterText = getItemAfterText(item);
 
-            if (afterText.toLowerCase().indexOf(lowerCaseFilterContent) >= 0) {
+            if (matchSearchText(afterText, keyword)) {
                 finalItems.push(item);
                 continue;
             }

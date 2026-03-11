@@ -239,7 +239,7 @@
             <f7-list-item
                 class="transaction-edit-datetime list-item-with-header-and-title"
                 link="#" no-chevron
-                :class="{ 'disabled': mode === TransactionEditPageMode.Edit && transaction.type === TransactionType.ModifyBalance, 'readonly': mode === TransactionEditPageMode.View && transaction.utcOffset === currentTimezoneOffsetMinutes }"
+                :class="{ 'readonly': mode === TransactionEditPageMode.View && transaction.utcOffset === currentTimezoneOffsetMinutes }"
                 v-if="pageTypeAndMode?.type === TransactionEditPageType.Transaction"
             >
                 <template #header>
@@ -305,7 +305,7 @@
                 :no-chevron="mode === TransactionEditPageMode.View"
                 link="#"
                 class="list-item-with-header-and-title list-item-title-hide-overflow list-item-no-item-after"
-                :class="{ 'disabled': mode === TransactionEditPageMode.Edit && transaction.type === TransactionType.ModifyBalance, 'readonly': mode === TransactionEditPageMode.View }"
+                 :class="{ 'readonly': mode === TransactionEditPageMode.View }"
                 :header="tt('Transaction Timezone')"
                 v-if="pageTypeAndMode?.type === TransactionEditPageType.Transaction || (pageTypeAndMode?.type === TransactionEditPageType.Template && transaction instanceof TransactionTemplate && transaction.templateType === TemplateType.Schedule.type)"
                 @click="showTimezonePopup = true"

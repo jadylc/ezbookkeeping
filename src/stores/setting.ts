@@ -299,6 +299,18 @@ export const useSettingsStore = defineStore('settings', () => {
         updateUserApplicationCloudSettingValue('totalAmountExcludeAccountIds', value);
     }
 
+    function setTotalAmountExcludeAccountTagIds(value: Record<string, boolean>): void {
+        updateApplicationSettingsValue('totalAmountExcludeAccountTagIds', value);
+        appSettings.value.totalAmountExcludeAccountTagIds = value;
+        updateUserApplicationCloudSettingValue('totalAmountExcludeAccountTagIds', value);
+    }
+
+    function setTotalAmountTargetCurrency(value: string): void {
+        updateApplicationSettingsValue('totalAmountTargetCurrency', value);
+        appSettings.value.totalAmountTargetCurrency = value;
+        updateUserApplicationCloudSettingValue('totalAmountTargetCurrency', value);
+    }
+
     function setAccountCategoryOrders(value: string): void {
         updateApplicationSettingsValue('accountCategoryOrders', value);
         appSettings.value.accountCategoryOrders = value;
@@ -549,6 +561,8 @@ export const useSettingsStore = defineStore('settings', () => {
         setShowTagInInsightsExplorerPage,
         // -- Account List Page
         setTotalAmountExcludeAccountIds,
+        setTotalAmountExcludeAccountTagIds,
+        setTotalAmountTargetCurrency,
         setAccountCategoryOrders,
         setHideCategoriesWithoutAccounts,
         // -- Exchange Rates Data Page

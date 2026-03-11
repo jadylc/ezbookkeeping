@@ -151,7 +151,7 @@ export const useUserStore = defineStore('user', () => {
     });
 
     function generateNewUserModel(language: string): User {
-        return User.createNewUser(language, settingsStore.localeDefaultSettings.currency, settingsStore.localeDefaultSettings.firstDayOfWeek);
+        return User.createNewUser(language, 'CNY', settingsStore.localeDefaultSettings.firstDayOfWeek);
     }
 
     function storeUserBasicInfo(userInfo: UserBasicInfo): void {

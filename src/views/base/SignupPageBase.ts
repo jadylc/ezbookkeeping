@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 
 import { useI18n } from '@/locales/helpers.ts';
 
@@ -22,7 +22,14 @@ export function useSignupPageBase() {
     const userStore = useUserStore();
     const exchangeRatesStore = useExchangeRatesStore();
 
+    const defaultSignupCurrency = 'CNY';
     const user = ref<User>(userStore.generateNewUserModel(getCurrentLanguageTag()));
+    user.value.defaultCurrency = defaultSignupCurrency;
+    watch(() => user.value.defaultCurrency, (value) => {
+        if (!value) {
+            user.value.defaultCurrency = defaultSignupCurrency;
+        }
+    });
     const submitting = ref<boolean>(false);
 
     const languageTitle = computed<string>(() => {
@@ -38,7 +45,8 @@ export function useSignupPageBase() {
     const currentLocale = computed<string>({
         get: () => getCurrentLanguageTag(),
         set: (value: string) => {
-            const isCurrencyDefault = user.value.defaultCurrency === settingsStore.localeDefaultSettings.currency;
+            const isCurrencyDefault = user.value.defaultCurrency === settingsStore.localeDefaultSettings.currency
+                && user.value.defaultCurrency !== 'CNY';
             const isFirstWeekDayDefault = user.value.firstDayOfWeek === settingsStore.localeDefaultSettings.firstDayOfWeek;
 
             user.value.language = value;

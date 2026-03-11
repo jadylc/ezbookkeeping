@@ -8,6 +8,7 @@ import { values } from '@/core/base.ts';
 import { DEFAULT_TAG_GROUP_ID } from '@/consts/tag.ts';
 
 import { TransactionTag } from '@/models/transaction_tag.ts';
+import { matchSearchText } from '@/lib/search.ts';
 
 export type TransactionTagWithGroupHeader = TransactionTag | {
     type: 'subheader';
@@ -45,8 +46,6 @@ export function useTransactionTagSelectionBase(props: CommonTransactionTagSelect
         return ret;
     });
 
-    const lowerCaseTagSearchContent = computed<string>(() => tagSearchContent.value.toLowerCase());
-
     const allTagsWithGroupHeader = computed<TransactionTagWithGroupHeader[]>(() => getTagsWithGroupHeader(tag => {
         if (!tag.hidden) {
             return true;
@@ -56,7 +55,7 @@ export function useTransactionTagSelectionBase(props: CommonTransactionTagSelect
             return true;
         }
 
-        if (lowerCaseTagSearchContent.value && tag.name.toLowerCase().indexOf(lowerCaseTagSearchContent.value) >= 0 && isAllFilteredTagHidden.value) {
+        if (tagSearchContent.value && matchSearchText(tag.name, tagSearchContent.value) && isAllFilteredTagHidden.value) {
             return true;
         }
 
@@ -64,8 +63,8 @@ export function useTransactionTagSelectionBase(props: CommonTransactionTagSelect
     }));
 
     const filteredTagsWithGroupHeader = computed<TransactionTagWithGroupHeader[]>(() => getTagsWithGroupHeader(tag => {
-        if (lowerCaseTagSearchContent.value) {
-            if (tag.name.toLowerCase().indexOf(lowerCaseTagSearchContent.value) >= 0 && (!tag.hidden || isAllFilteredTagHidden.value)) {
+        if (tagSearchContent.value) {
+            if (matchSearchText(tag.name, tagSearchContent.value) && (!tag.hidden || isAllFilteredTagHidden.value)) {
                 return true;
             } else {
                 return false;
@@ -76,11 +75,10 @@ export function useTransactionTagSelectionBase(props: CommonTransactionTagSelect
     }));
 
     const isAllFilteredTagHidden = computed<boolean>(() => {
-        const lowerCaseTagSearchContent = tagSearchContent.value.toLowerCase();
         let hiddenCount = 0;
 
         for (const tag of values(transactionTagsStore.allTransactionTagsMap)) {
-            if (!lowerCaseTagSearchContent || tag.name.toLowerCase().indexOf(lowerCaseTagSearchContent) >= 0) {
+            if (matchSearchText(tag.name, tagSearchContent.value)) {
                 if (!tag.hidden) {
                     return false;
                 }

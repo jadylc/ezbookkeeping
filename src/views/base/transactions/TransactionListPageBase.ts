@@ -12,7 +12,6 @@ import { type TransactionListFilter, type TransactionMonthList, useTransactionsS
 import { type TypeAndName, keys, entries } from '@/core/base.ts';
 import type { NumeralSystem } from '@/core/numeral.ts';
 import { type TextualYearMonthDay, type Year0BasedMonth, type LocalizedDateRange, type WeekDayValue, DateRange, DateRangeScene } from '@/core/datetime.ts';
-import { AccountType } from '@/core/account.ts';
 import { TransactionType } from '@/core/transaction.ts';
 import { DISPLAY_HIDDEN_AMOUNT, INCOMPLETE_AMOUNT_SUFFIX } from '@/consts/numeral.ts';
 import { DEFAULT_TAG_GROUP_ID } from '@/consts/tag.ts';
@@ -266,17 +265,7 @@ export function useTransactionListPageBase() {
         return null;
     });
 
-    const canAddTransaction = computed<boolean>(() => {
-        if (query.value.accountIds && queryAllFilterAccountIdsCount.value === 1) {
-            const account = allAccountsMap.value[query.value.accountIds];
-
-            if (account && account.type === AccountType.MultiSubAccounts.type) {
-                return false;
-            }
-        }
-
-        return true;
-    });
+    const canAddTransaction = computed<boolean>(() => true);
 
     function hasSubCategoryInQuery(category: TransactionCategory): boolean {
         if (!category.subCategories || !category.subCategories.length) {
@@ -353,18 +342,18 @@ export function useTransactionListPageBase() {
                 return formatAmount(transaction.sourceAmount, transaction.hideAmount, transaction.sourceAccount.currency);
             }
         } else if (queryAllFilterAccountIdsCount.value === 1) {
-            if (transaction.sourceAccount && (queryAllFilterAccountIds.value[transaction.sourceAccount.id] || queryAllFilterAccountIds.value[transaction.sourceAccount.parentId])) {
+            if (transaction.sourceAccount && queryAllFilterAccountIds.value[transaction.sourceAccount.id]) {
                 return formatAmount(transaction.sourceAmount, transaction.hideAmount, transaction.sourceAccount.currency);
-            } else if (transaction.destinationAccount && (queryAllFilterAccountIds.value[transaction.destinationAccount.id] || queryAllFilterAccountIds.value[transaction.destinationAccount.parentId])) {
+            } else if (transaction.destinationAccount && queryAllFilterAccountIds.value[transaction.destinationAccount.id]) {
                 return formatAmount(transaction.destinationAmount, transaction.hideAmount, transaction.destinationAccount.currency);
             }
         } else { // queryAllFilterAccountIdsCount.value > 1
             if (transaction.sourceAccount && transaction.destinationAccount) {
-                if ((queryAllFilterAccountIds.value[transaction.sourceAccount.id] || queryAllFilterAccountIds.value[transaction.sourceAccount.parentId])
-                    && !queryAllFilterAccountIds.value[transaction.destinationAccount.id] && !queryAllFilterAccountIds.value[transaction.destinationAccount.parentId]) {
+                if (queryAllFilterAccountIds.value[transaction.sourceAccount.id]
+                    && !queryAllFilterAccountIds.value[transaction.destinationAccount.id]) {
                     return formatAmount(transaction.sourceAmount, transaction.hideAmount, transaction.sourceAccount.currency);
-                } else if ((queryAllFilterAccountIds.value[transaction.destinationAccount.id] || queryAllFilterAccountIds.value[transaction.destinationAccount.parentId])
-                    && !queryAllFilterAccountIds.value[transaction.sourceAccount.id] && !queryAllFilterAccountIds.value[transaction.sourceAccount.parentId]) {
+                } else if (queryAllFilterAccountIds.value[transaction.destinationAccount.id]
+                    && !queryAllFilterAccountIds.value[transaction.sourceAccount.id]) {
                     return formatAmount(transaction.destinationAmount, transaction.hideAmount, transaction.destinationAccount.currency);
                 }
             }

@@ -390,10 +390,6 @@ func (a *DataManagementsApi) ClearAllTransactionsByAccountHandler(c *core.WebCon
 		return nil, errs.ErrCannotDeleteTransactionInHiddenAccount
 	}
 
-	if account.Type == models.ACCOUNT_TYPE_MULTI_SUB_ACCOUNTS {
-		return nil, errs.ErrCannotDeleteTransactionInParentAccount
-	}
-
 	err = a.transactions.DeleteAllTransactionsOfAccount(c, uid, account.AccountId, pageCountForClearTransactions)
 
 	if err != nil {

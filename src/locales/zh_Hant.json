@@ -1,7 +1,7 @@
 {
     "global": {
         "app": {
-            "title": "ezBookkeeping"
+            "title": "ezfinance"
         }
     },
     "language": {
@@ -137,20 +137,20 @@
             "clearTransactionsInAccountTip": "您不能還原此操作。此操作將會清除您在 {account} 帳戶中的交易資料。請輸入您目前的密碼以確認。",
             "accountActivationAndResendValidationEmailTip": "帳號啟用連結已經傳送到您的信箱地址：{email}，如果您沒有收到郵件，請再次輸入密碼並點擊下方的按鈕重新發送驗證郵件。",
             "resendValidationEmailTip": "如果您沒有收到郵件，請再次輸入密碼並點擊下方的按鈕重新發送驗證郵件到：{email}",
-            "oauth2bindTip": "您正在使用 {providerName} 登入 \"{userName}\" 使用者，請輸入您的 ezBookkeeping 的密碼以進行驗證。"
+            "oauth2bindTip": "您正在使用 {providerName} 登入 \"{userName}\" 使用者，請輸入您的 ezfinance 的密碼以進行驗證。"
         }
     },
     "dataExport": {
-        "defaultExportFilename": "ezBookkeeping_匯出資料",
-        "exportFilename": "ezBookkeeping_{nickname}_匯出資料",
-        "defaultExportStatisticsFileName": "ezBookkeeping_統計資料",
-        "exportStatisticsFileName": "ezBookkeeping_{nickname}_統計資料",
-        "defaultExportReconciliationStatementsFileName": "ezBookkeeping_對帳單",
-        "exportReconciliationStatementsFileName": "ezBookkeeping_{nickname}_對帳單",
-        "defaultImportDataMappingFileName": "ezBookkeeping_匯入資料對應檔案",
-        "defaultImportHandlingScript": "ezBookkeeping_匯入處理腳本",
-        "defaultImportReplaceRuleFileName": "ezBookkeeping_匯入替換規則檔案",
-        "defaultImportCheckResultFileName": "ezBookkeeping_匯入檢查結果"
+        "defaultExportFilename": "ezfinance_匯出資料",
+        "exportFilename": "ezfinance_{nickname}_匯出資料",
+        "defaultExportStatisticsFileName": "ezfinance_統計資料",
+        "exportStatisticsFileName": "ezfinance_{nickname}_統計資料",
+        "defaultExportReconciliationStatementsFileName": "ezfinance_對帳單",
+        "exportReconciliationStatementsFileName": "ezfinance_{nickname}_對帳單",
+        "defaultImportDataMappingFileName": "ezfinance_匯入資料對應檔案",
+        "defaultImportHandlingScript": "ezfinance_匯入處理腳本",
+        "defaultImportReplaceRuleFileName": "ezfinance_匯入替換規則檔案",
+        "defaultImportCheckResultFileName": "ezfinance_匯入檢查結果"
     },
     "calendar": {
         "Gregorian": "公曆",
@@ -1620,8 +1620,8 @@
     "Change Language": "變更語言",
     "Date is too early": "日期過早",
     "User Canceled": "使用者已取消",
-    "Welcome to ezBookkeeping": "歡迎使用 ezBookkeeping",
-    "Please log in with your ezBookkeeping account": "請使用您的 ezBookkeeping 帳號登入",
+    "Welcome to ezBookkeeping": "歡迎使用 ezfinance",
+    "Please log in with your ezBookkeeping account": "請使用您的 ezfinance 帳號登入",
     "Unlock Application": "解鎖應用程式",
     "Please enter your PIN code or use WebAuthn to unlock application": "請輸入您的 PIN 碼，或使用 WebAuthn 解鎖應用程式",
     "Please enter your PIN code to unlock application": "請輸入您的 PIN 碼解鎖應用程式",
@@ -1640,6 +1640,7 @@
     "Nickname": "暱稱",
     "Your nickname": "您的暱稱",
     "Default Currency": "預設貨幣",
+    "Display Currency": "顯示貨幣",
     "Default Account": "預設帳戶",
     "First Day of Week": "每週第一天",
     "Fiscal Year Start Date": "財政年度起始日",
@@ -1827,6 +1828,9 @@
     "Account Type": "帳戶類型",
     "Account Name": "帳戶名稱",
     "Your account name": "您的帳戶名稱",
+    "Account Tag": "帳戶標籤",
+    "Account Tags": "帳戶標籤",
+    "Your account tag (optional)": "你的帳戶標籤（可選）",
     "Main Account": "主帳戶",
     "Sub Account": "子帳戶",
     "Sub-account Name": "子帳戶名稱",
@@ -1970,13 +1974,13 @@
     "Filter Description": "篩選描述",
     "How to import this file?": "如何匯入此檔案？",
     "How to export this file?": "如何匯出此檔案？",
-    "ezBookkeeping File Format": "ezBookkeeping 檔案格式",
+    "ezBookkeeping File Format": "ezfinance 檔案格式",
     "Custom File Format": "自訂檔案格式",
     "General Data Exchange Format": "通用資料交換格式",
     "General Bank Statement Format": "通用銀行對帳單格式",
     "Other Bank/Payment App Statement File": "其他銀行/支付應用程式對帳單檔案",
     "Other Finance App File Format": "其他金融應用程式檔案格式",
-    "ezbookkeeping Data Export File": "ezbookkeeping 資料匯出檔案",
+    "ezbookkeeping Data Export File": "ezfinance 資料匯出檔案",
     "Excel Workbook File": "Excel 工作簿檔案",
     "Excel Workbook File (.xlsx)": "Excel 工作簿檔案 (.xlsx)",
     "Excel 97-2003 Workbook File (.xls)": "Excel 97-2003 工作簿檔案 (.xls)",
@@ -2194,6 +2198,7 @@
     "Filter Accounts": "篩選帳戶",
     "Filter Transaction Categories": "篩選交易分類",
     "Filter Transaction Tags": "篩選交易標籤",
+    "Filter Account Tags": "篩選帳戶標籤",
     "Filter transaction description": "篩選交易描述",
     "User Settings": "使用者設定",
     "User Profile": "使用者資料",
@@ -2429,6 +2434,8 @@
     "Unable to unhide this tag": "無法取消隱藏此標籤",
     "Are you sure you want to delete this tag?": "您確定要刪除此標籤？",
     "Unable to delete this tag": "無法刪除此標籤",
+    "Show Hidden Account Tags": "顯示隱藏的帳戶標籤",
+    "Hide Hidden Account Tags": "不顯示隱藏的帳戶標籤",
     "Show Hidden Transaction Tags": "顯示隱藏的交易標籤",
     "Hide Hidden Transaction Tags": "不顯示隱藏的交易標籤",
     "Transaction Templates": "交易範本",
@@ -2570,5 +2577,6 @@
     "Parameter Invalid": "參數無效",
     "Numeric Overflow": "數值溢位",
     "Click to close": "點選關閉",
-    "Create Nonexistent Accounts": "建立不存在的帳戶"
+    "Create Nonexistent Accounts": "建立不存在的帳戶",
+    "All Currencies": "多幣種"
 }

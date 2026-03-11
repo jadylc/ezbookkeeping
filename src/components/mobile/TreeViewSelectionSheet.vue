@@ -56,6 +56,7 @@ import { type TwoLevelItemSelectionBaseProps, useTwoLevelItemSelectionBase } fro
 
 import { scrollToSelectedItem } from '@/lib/ui/common.ts';
 import { type Framework7Dom, scrollSheetToTop } from '@/lib/ui/mobile.ts';
+import { matchSearchText } from '@/lib/search.ts';
 
 interface MobileTwoLevelItemSelectionBaseProps extends TwoLevelItemSelectionBaseProps {
     show: boolean;
@@ -101,17 +102,17 @@ function isPrimaryItemHasSecondaryValue(primaryItem: Record<string, unknown>): b
         return false;
     }
 
-    const lowerCaseFilterContent = filterContent.value?.toLowerCase() ?? '';
+    const keyword = filterContent.value ?? '';
 
     for (const secondaryItem of subItems) {
         if (props.secondaryHiddenField && (secondaryItem as Record<string, unknown>)[props.secondaryHiddenField]) {
             continue;
         }
 
-        if (props.primaryTitleField && lowerCaseFilterContent) {
+        if (props.primaryTitleField && keyword) {
             const title = ti((secondaryItem as Record<string, unknown>)[props.primaryTitleField] as string, !!props.primaryTitleI18n);
 
-            if (title.toLowerCase().indexOf(lowerCaseFilterContent) >= 0) {
+            if (matchSearchText(title, keyword)) {
                 return true;
             }
         }
