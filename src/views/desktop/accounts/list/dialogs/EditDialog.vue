@@ -52,7 +52,7 @@
                             />
                         </v-col>
                         <v-col cols="12" md="12">
-                            <v-autocomplete
+                            <v-combobox
                                 item-title="name"
                                 item-value="name"
                                 persistent-placeholder
@@ -61,7 +61,7 @@
                                 closable-chips
                                 :disabled="loading || submitting"
                                 :label="tt('Account Tag')"
-                                :placeholder="tt('Your account tag (optional)')"
+                                :placeholder="tt('Select or create account tag (optional)')"
                                 :items="allAccountTags"
                                 :custom-filter="filterAccountTag"
                                 :no-data-text="tt('No available tag')"
@@ -70,8 +70,8 @@
                                 <template #item="{ props, item }">
                                     <v-list-item :value="item.value"
                                                  v-bind="props"
-                                                 :disabled="item.raw.hidden && !account.tags.includes(item.value)"
-                                                 v-if="!item.raw.hidden || account.tags.includes(item.value)">
+                                                 :disabled="item.raw && item.raw.hidden && !account.tags.includes(item.value)"
+                                                 v-if="!item.raw || !item.raw.hidden || account.tags.includes(item.value)">
                                         <template #title>
                                             <v-list-item-title>
                                                 <div class="d-flex align-center">
@@ -82,7 +82,7 @@
                                         </template>
                                     </v-list-item>
                                 </template>
-                            </v-autocomplete>
+                            </v-combobox>
                         </v-col>
                         <v-col cols="12" md="6">
                             <icon-select icon-type="account"
@@ -195,7 +195,7 @@ import { useAccountTagsStore } from '@/stores/accountTag.ts';
 import { ALL_ACCOUNT_ICONS } from '@/consts/icon.ts';
 import { ALL_ACCOUNT_COLORS } from '@/consts/color.ts';
 import { Account } from '@/models/account.ts';
-import type { AccountTag } from '@/models/account_tag.ts';
+import { AccountTag } from '@/models/account_tag.ts';
 
 import { isNumber } from '@/lib/common.ts';
 import { matchSearchText } from '@/lib/search.ts';
@@ -311,7 +311,7 @@ function open(options?: { id?: string, currentAccount?: Account, category?: numb
     });
 }
 
-function save(): void {
+async function save(): Promise<void> {
     const problemMessage = inputEmptyProblemMessage.value;
 
     if (problemMessage) {
@@ -321,11 +321,27 @@ function save(): void {
 
     submitting.value = true;
 
-    accountsStore.saveAccount({
-        account: account.value,
-        isEdit: !!editAccountId.value,
-        clientSessionId: clientSessionId.value
-    }).then(() => {
+    try {
+        const tagNames = account.value.tags && account.value.tags.length ? account.value.tags : [];
+        const nameMap = accountTagsStore.allAccountTagsNameMap;
+        const newTagNamesToCreate = [...new Set(
+            tagNames
+                .map((name: string) => (name || '').trim())
+                .filter((name: string) => name && !nameMap[name])
+        )];
+
+        for (const name of newTagNamesToCreate) {
+            await accountTagsStore.saveTag({
+                tag: AccountTag.createNewTag(name)
+            });
+        }
+
+        await accountsStore.saveAccount({
+            account: account.value,
+            isEdit: !!editAccountId.value,
+            clientSessionId: clientSessionId.value
+        });
+
         submitting.value = false;
 
         let message = 'You have saved this account';
@@ -336,13 +352,13 @@ function save(): void {
 
         resolveFunc?.({ message });
         showState.value = false;
-    }).catch(error => {
+    } catch (error: unknown) {
         submitting.value = false;
 
-        if (!error.processed) {
-            snackbar.value?.showError(error);
+        if (error && typeof error === 'object' && !(error as { processed?: boolean }).processed) {
+            snackbar.value?.showError(error as Error);
         }
-    });
+    }
 }
 
 function cancel(): void {
@@ -354,7 +370,7 @@ function onShowDateTimeError(error: string): void {
     snackbar.value?.showError(error);
 }
 
-function filterAccountTag(value: string, query: string, item?: { value: unknown, raw: AccountTag }): boolean {
+function filterAccountTag(value: string, query: string, item?: { value: unknown, raw: AccountTag | undefined }): boolean {
     if (!item) {
         return false;
     }
@@ -363,7 +379,8 @@ function filterAccountTag(value: string, query: string, item?: { value: unknown,
         return true;
     }
 
-    return matchSearchText(item.raw.name, query);
+    const name = item.raw?.name ?? (typeof value === 'string' ? value : '');
+    return matchSearchText(name, query);
 }
 
 defineExpose({
