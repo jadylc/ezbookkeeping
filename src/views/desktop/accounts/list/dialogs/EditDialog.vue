@@ -311,6 +311,22 @@ function open(options?: { id?: string, currentAccount?: Account, category?: numb
     });
 }
 
+function normalizeTagValue(tag: unknown): string {
+    if (typeof tag === 'string') {
+        return tag.trim();
+    }
+
+    if (tag && typeof tag === 'object' && (tag as { name?: unknown }).name) {
+        const name = (tag as { name?: unknown }).name;
+
+        if (typeof name === 'string') {
+            return name.trim();
+        }
+    }
+
+    return '';
+}
+
 async function save(): Promise<void> {
     const problemMessage = inputEmptyProblemMessage.value;
 
@@ -322,13 +338,18 @@ async function save(): Promise<void> {
     submitting.value = true;
 
     try {
-        const tagNames = account.value.tags && account.value.tags.length ? account.value.tags : [];
-        const nameMap = accountTagsStore.allAccountTagsNameMap;
-        const newTagNamesToCreate = [...new Set(
-            tagNames
-                .map((name: string) => (name || '').trim())
-                .filter((name: string) => name && !nameMap[name])
+        const rawTags: unknown[] = Array.isArray(account.value.tags) ? account.value.tags : [];
+        const normalizedTagNames = [...new Set(
+            rawTags
+                .map(normalizeTagValue)
+                .filter((name: string) => !!name)
         )];
+
+        // 确保 account.tags 中只保存字符串形式的标签名称
+        account.value.tags = normalizedTagNames;
+
+        const nameMap = accountTagsStore.allAccountTagsNameMap;
+        const newTagNamesToCreate = normalizedTagNames.filter(name => !nameMap[name]);
 
         for (const name of newTagNamesToCreate) {
             await accountTagsStore.saveTag({
